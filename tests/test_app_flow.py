@@ -11,6 +11,7 @@ from mahjong_solitaire.app import (
     MahjongApp,
     ScreenState,
     tile_asset_name,
+    WINDOW_SIZE,
 )
 from mahjong_solitaire.core import Board, Coord, Tile
 from mahjong_solitaire.generator import build_face_pairs
@@ -98,6 +99,18 @@ class AppFlowTests(unittest.TestCase):
                     app.start_game(key)
                     app.draw(0.0)
                     self.assertEqual(app.state, ScreenState.PLAYING)
+
+    def test_menu_and_level_select_transparent_effects_do_not_box(self):
+        app = MahjongApp()
+
+        app.draw(0.0)
+        menu_glow_corner = app.screen.get_at((WINDOW_SIZE[0] // 2 - 300, 90))
+        self.assertNotEqual(menu_glow_corner[:3], (0, 0, 0))
+
+        app.invoke_action("level_select")
+        app.draw(0.0)
+        title_area = app.screen.get_at((68, 62))
+        self.assertNotEqual(title_area[:3], (0, 0, 0))
 
     def test_tile_art_assets_cover_all_generated_suited_and_honor_faces(self):
         for pair in build_face_pairs():
