@@ -46,18 +46,6 @@ MUTED_TEXT = (187, 209, 201)
 INK = (37, 41, 39)
 
 
-def transparent_surface(size: tuple[int, int]) -> pygame.Surface:
-    surface = pygame.Surface(size, pygame.SRCALPHA)
-    surface.fill((0, 0, 0, 0))
-    return surface
-
-
-def render_text(
-    font: pygame.font.Font, text: str, color: tuple[int, int, int]
-) -> pygame.Surface:
-    return font.render(text, True, color).convert_alpha()
-
-
 class ScreenState(Enum):
     MENU = "menu"
     LEVEL_SELECT = "level_select"
@@ -106,7 +94,7 @@ class TileArt:
 
     def render_tile(self, tile: Tile) -> pygame.Surface:
         asset_name = tile_asset_name(tile)
-        surface = transparent_surface((TILE_WIDTH, TILE_HEIGHT))
+        surface = pygame.Surface((TILE_WIDTH, TILE_HEIGHT), pygame.SRCALPHA)
         base = pygame.Rect(1, 1, TILE_WIDTH - 2, TILE_HEIGHT - 2)
         pygame.draw.rect(surface, (248, 246, 237), base, border_radius=5)
         source = self.source_images.get(asset_name)
@@ -370,7 +358,7 @@ class MahjongApp:
             )
             pygame.draw.rect(surface, color, pygame.Rect(0, y, WINDOW_SIZE[0], 4))
 
-        felt = transparent_surface(WINDOW_SIZE)
+        felt = pygame.Surface(WINDOW_SIZE, pygame.SRCALPHA)
         for y in range(92, WINDOW_SIZE[1], 4):
             for x in range(0, WINDOW_SIZE[0], 4):
                 value = ((x * 13 + y * 7) % 17) - 8
@@ -388,23 +376,21 @@ class MahjongApp:
 
     def draw_menu(self, now: float) -> None:
         glow_alpha = int(34 + 20 * math.sin(now * 1.5))
-        glow = transparent_surface((620, 190))
+        glow = pygame.Surface((620, 190), pygame.SRCALPHA)
         pygame.draw.ellipse(glow, (235, 198, 118, glow_alpha), glow.get_rect())
         self.screen.blit(glow, glow.get_rect(center=(WINDOW_SIZE[0] // 2, 178)))
 
-        title = render_text(self.title_font, "Mahjong Solitaire", TEXT)
+        title = self.title_font.render("Mahjong Solitaire", True, TEXT)
         self.screen.blit(title, title.get_rect(center=(WINDOW_SIZE[0] // 2, 158)))
-        subtitle = render_text(self.font, "A quiet tile-matching table", MUTED_TEXT)
+        subtitle = self.font.render("A quiet tile-matching table", True, MUTED_TEXT)
         self.screen.blit(subtitle, subtitle.get_rect(center=(WINDOW_SIZE[0] // 2, 222)))
         for button in self.menu_buttons():
             self.draw_button(button)
 
     def draw_level_select(self) -> None:
-        title = render_text(self.large_font, "Select Layout", TEXT)
+        title = self.large_font.render("Select Layout", True, TEXT)
         self.screen.blit(title, (64, 54))
-        subtitle = render_text(
-            self.font, "Choose a difficulty tab, then start a layout.", MUTED_TEXT
-        )
+        subtitle = self.font.render("Choose a difficulty tab, then start a layout.", True, MUTED_TEXT)
         self.screen.blit(subtitle, (64, 98))
 
         pygame.draw.rect(self.screen, PANEL, LEVEL_SELECT_SIDEBAR, border_radius=10)
@@ -435,10 +421,10 @@ class MahjongApp:
             pygame.draw.rect(self.screen, (250, 246, 232), card, border_radius=10)
             pygame.draw.rect(self.screen, (152, 130, 86), card, width=2, border_radius=10)
             self.draw_level_preview(level_key, pygame.Rect(card.x + 24, card.y + 24, 216, 156))
-            title = render_text(self.large_font, level.name.split(" ", 1)[1], INK)
+            title = self.large_font.render(level.name.split(" ", 1)[1], True, INK)
             self.screen.blit(title, (card.x + 24, card.y + 202))
             meta = f"{len(level.coords)} tiles"
-            meta_surf = render_text(self.font, meta, (88, 100, 94))
+            meta_surf = self.font.render(meta, True, (88, 100, 94))
             self.screen.blit(meta_surf, (card.x + 24, card.y + 246))
 
     def draw_level_preview(self, level_key: str, rect: pygame.Rect) -> None:
@@ -477,12 +463,12 @@ class MahjongApp:
     def draw_toolbar(self, now: float) -> None:
         pygame.draw.rect(self.screen, PANEL, pygame.Rect(0, 0, WINDOW_SIZE[0], 88))
         pygame.draw.line(self.screen, (51, 113, 105), (0, 87), (WINDOW_SIZE[0], 87), 2)
-        title = render_text(self.large_font, LEVELS[self.current_level].name, TEXT)
+        title = self.large_font.render(LEVELS[self.current_level].name, True, TEXT)
         self.screen.blit(title, (34, 22))
         remaining = self.board.remaining_count() if self.board else 0
         elapsed = self.elapsed_at_end if self.state == ScreenState.WON else int(now - self.start_time)
         stats = f"Tiles: {remaining}    Moves: {self.moves_made}    Hints: {self.hints_used}    Time: {format_time(elapsed)}"
-        stats_text = render_text(self.font, stats, MUTED_TEXT)
+        stats_text = self.font.render(stats, True, MUTED_TEXT)
         stats_x = max(180, title.get_width() + 64)
         self.screen.blit(stats_text, (stats_x, 34))
         for button in self.toolbar_buttons():
@@ -518,7 +504,7 @@ class MahjongApp:
         art = self.tile_art.surface_for(tile)
         self.screen.blit(art, rect)
         if hovered:
-            hover = transparent_surface(rect.size)
+            hover = pygame.Surface(rect.size, pygame.SRCALPHA)
             hover.fill((255, 250, 230, 45))
             self.screen.blit(hover, rect)
 
@@ -532,7 +518,7 @@ class MahjongApp:
             pygame.draw.rect(self.screen, (222, 82, 70), rect.inflate(7, 7), width=3, border_radius=8)
 
     def draw_modal(self) -> None:
-        overlay = transparent_surface(WINDOW_SIZE)
+        overlay = pygame.Surface(WINDOW_SIZE, pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 125))
         self.screen.blit(overlay, (0, 0))
         rect = pygame.Rect(0, 0, 460, 270)
@@ -550,8 +536,8 @@ class MahjongApp:
         else:
             title = "No Moves Available"
             body = "Undo the last move or exit to the menu."
-        title_surf = render_text(self.large_font, title, INK)
-        body_surf = render_text(self.font, body, (70, 83, 80))
+        title_surf = self.large_font.render(title, True, INK)
+        body_surf = self.font.render(body, True, (70, 83, 80))
         self.screen.blit(title_surf, title_surf.get_rect(center=(rect.centerx, rect.y + 66)))
         self.screen.blit(body_surf, body_surf.get_rect(center=(rect.centerx, rect.y + 118)))
         for button in self.modal_buttons():
@@ -581,7 +567,7 @@ class MahjongApp:
         pygame.draw.rect(self.screen, (9, 26, 29), rect.move(4, 5), border_radius=8)
         pygame.draw.rect(self.screen, fill, rect, border_radius=8)
         pygame.draw.rect(self.screen, border, rect, width=2, border_radius=8)
-        label = render_text(self.font, button.label, text_color)
+        label = self.font.render(button.label, True, text_color)
         self.screen.blit(label, label.get_rect(center=rect.center))
 
     def menu_buttons(self) -> list[Button]:
@@ -693,7 +679,7 @@ class MahjongApp:
         rect = pygame.Rect(34, WINDOW_SIZE[1] - 58, 420, 38)
         pygame.draw.rect(self.screen, (18, 46, 50), rect, border_radius=8)
         pygame.draw.rect(self.screen, (53, 117, 109), rect, width=1, border_radius=8)
-        text = render_text(self.font, self.status_text, (255, 238, 172))
+        text = self.font.render(self.status_text, True, (255, 238, 172))
         self.screen.blit(text, (rect.x + 14, rect.y + 7))
 
     def draw_particles(self, now: float) -> None:
@@ -706,7 +692,7 @@ class MahjongApp:
             x = particle.x + particle.vx * t
             y = particle.y + particle.vy * t + 34 * t * t
             alpha = max(0, 180 - int(180 * t))
-            surface = transparent_surface((8, 8))
+            surface = pygame.Surface((8, 8), pygame.SRCALPHA)
             pygame.draw.circle(surface, (*particle.color, alpha), (4, 4), 4)
             self.screen.blit(surface, (x - 4, y - 4))
             active.append(particle)
