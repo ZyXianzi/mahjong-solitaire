@@ -135,7 +135,6 @@ class MahjongApp:
         self.tile_rects: dict[int, pygame.Rect] = {}
         self.error_message = ""
         self.particles: list[Particle] = []
-        self.background = self.build_background()
 
     def run(self) -> None:
         while self.running:
@@ -347,8 +346,7 @@ class MahjongApp:
             if self.state in {ScreenState.DEADLOCK, ScreenState.WON, ScreenState.ERROR}:
                 self.draw_modal()
 
-    def build_background(self) -> pygame.Surface:
-        surface = pygame.Surface(WINDOW_SIZE)
+    def draw_background(self) -> None:
         height = WINDOW_SIZE[1]
         for y in range(0, height, 4):
             t = y / height
@@ -356,23 +354,9 @@ class MahjongApp:
                 int(BG_TOP[index] * (1 - t) + BG_BOTTOM[index] * t)
                 for index in range(3)
             )
-            pygame.draw.rect(surface, color, pygame.Rect(0, y, WINDOW_SIZE[0], 4))
-
-        felt = pygame.Surface(WINDOW_SIZE, pygame.SRCALPHA)
-        for y in range(92, WINDOW_SIZE[1], 4):
-            for x in range(0, WINDOW_SIZE[0], 4):
-                value = ((x * 13 + y * 7) % 17) - 8
-                alpha = 2 + abs(value) // 3
-                color = (255, 255, 255, alpha) if value > 0 else (0, 0, 0, alpha)
-                pygame.draw.rect(felt, color, pygame.Rect(x, y, 4, 4))
-        surface.blit(felt, (0, 0))
-
+            pygame.draw.rect(self.screen, color, pygame.Rect(0, y, WINDOW_SIZE[0], 4))
         for x in range(60, WINDOW_SIZE[0], 120):
-            pygame.draw.line(surface, (31, 103, 94), (x, 92), (x - 220, 800), 1)
-        return surface
-
-    def draw_background(self) -> None:
-        self.screen.blit(self.background, (0, 0))
+            pygame.draw.line(self.screen, (31, 103, 94), (x, 92), (x - 220, 800), 1)
 
     def draw_menu(self, now: float) -> None:
         glow_alpha = int(34 + 20 * math.sin(now * 1.5))
@@ -445,9 +429,8 @@ class MahjongApp:
             x = ox + (coord.x - min_x) * scale - coord.z * 2
             y = oy + (coord.y - min_y) * scale - coord.z * 2
             mini = pygame.Rect(int(x), int(y), tile_w, tile_h)
-            pygame.draw.rect(self.screen, (92, 62, 30), mini.move(1, 2), border_radius=2)
-            pygame.draw.rect(self.screen, (248, 246, 237), mini, border_radius=3)
-            pygame.draw.rect(self.screen, (17, 19, 17), mini, width=1, border_radius=3)
+            pygame.draw.rect(self.screen, (244, 234, 202), mini, border_radius=2)
+            pygame.draw.rect(self.screen, (115, 99, 73), mini, width=1, border_radius=2)
 
     def draw_game(self, now: float) -> None:
         self.draw_toolbar(now)
@@ -509,13 +492,13 @@ class MahjongApp:
             self.screen.blit(hover, rect)
 
         if self.selected_id == tile.id:
-            pulse = int(1 + 1 * math.sin(now * 8))
-            pygame.draw.rect(self.screen, GOLD_LIGHT, rect.inflate(5 + pulse, 5 + pulse), width=2, border_radius=8)
+            pulse = int(2 + 2 * math.sin(now * 8))
+            pygame.draw.rect(self.screen, GOLD_LIGHT, rect.inflate(8 + pulse, 8 + pulse), width=4, border_radius=9)
         if self.hint_pair and tile.id in self.hint_pair:
-            pulse = int(2 + 1 * math.sin(now * 6))
-            pygame.draw.rect(self.screen, (93, 218, 159), rect.inflate(6 + pulse, 6 + pulse), width=2, border_radius=8)
+            pulse = int(3 + 2 * math.sin(now * 6))
+            pygame.draw.rect(self.screen, (88, 210, 153), rect.inflate(8 + pulse, 8 + pulse), width=4, border_radius=9)
         if tile.id in self.flash_tiles and now < self.flash_tiles[tile.id]:
-            pygame.draw.rect(self.screen, (222, 82, 70), rect.inflate(7, 7), width=3, border_radius=8)
+            pygame.draw.rect(self.screen, (222, 82, 70), rect.inflate(8, 8), width=4, border_radius=9)
 
     def draw_modal(self) -> None:
         overlay = pygame.Surface(WINDOW_SIZE, pygame.SRCALPHA)

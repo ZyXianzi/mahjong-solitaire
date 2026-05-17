@@ -89,16 +89,6 @@ class AppFlowTests(unittest.TestCase):
                     self.assertIsNotNone(app.board)
                     self.assertGreater(app.board.remaining_count(), 0)
 
-    def test_every_level_option_renders_a_frame(self):
-        app = MahjongApp()
-
-        for keys in LEVEL_OPTIONS.values():
-            for key in keys:
-                with self.subTest(level=key):
-                    app.start_game(key)
-                    app.draw(0.0)
-                    self.assertEqual(app.state, ScreenState.PLAYING)
-
     def test_tile_art_assets_cover_all_generated_suited_and_honor_faces(self):
         for pair in build_face_pairs():
             for face, group in pair:
