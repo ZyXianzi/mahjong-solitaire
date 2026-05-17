@@ -204,6 +204,7 @@ class MahjongApp:
         self.board.restore_pair(move)
         self.selected_id = None
         self.hint_pair = None
+        self.moves_made = max(0, self.moves_made - 1)
         self.state = ScreenState.PLAYING
         self.status("Move undone.")
 
@@ -412,4 +413,3 @@ def face_color(group: str) -> tuple[int, int, int]:
 def format_time(seconds: int) -> str:
     minutes, secs = divmod(seconds, 60)
     return f"{minutes:02d}:{secs:02d}"
-
