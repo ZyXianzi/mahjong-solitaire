@@ -24,6 +24,9 @@ BOARD_TOP = 112
 DIFFICULTIES = ("easy", "medium", "hard")
 DIFFICULTY_LABELS = {"easy": "Easy", "medium": "Medium", "hard": "Hard"}
 LEVEL_OPTIONS = {"easy": ("easy",), "medium": ("medium",), "hard": ("hard",)}
+LEVEL_SELECT_SIDEBAR = pygame.Rect(64, 154, 220, 526)
+LEVEL_SELECT_CONTENT = pygame.Rect(320, 154, 896, 526)
+LEVEL_CARD_SIZE = (264, 344)
 
 BG_TOP = (11, 30, 38)
 BG_BOTTOM = (28, 91, 82)
@@ -333,35 +336,43 @@ class MahjongApp:
 
     def draw_level_select(self) -> None:
         title = self.large_font.render("Select Layout", True, TEXT)
-        self.screen.blit(title, (54, 48))
+        self.screen.blit(title, (64, 54))
         subtitle = self.font.render("Choose a difficulty tab, then start a layout.", True, MUTED_TEXT)
-        self.screen.blit(subtitle, (54, 92))
+        self.screen.blit(subtitle, (64, 98))
 
-        tab_panel = pygame.Rect(52, 140, 240, 500)
-        pygame.draw.rect(self.screen, PANEL, tab_panel, border_radius=10)
-        pygame.draw.rect(self.screen, (51, 112, 105), tab_panel, width=2, border_radius=10)
+        pygame.draw.rect(self.screen, PANEL, LEVEL_SELECT_SIDEBAR, border_radius=10)
+        pygame.draw.rect(self.screen, (51, 112, 105), LEVEL_SELECT_SIDEBAR, width=2, border_radius=10)
 
-        content = pygame.Rect(330, 140, 870, 500)
-        pygame.draw.rect(self.screen, (238, 231, 211), content, border_radius=12)
-        pygame.draw.rect(self.screen, (94, 116, 104), content, width=2, border_radius=12)
+        pygame.draw.rect(self.screen, (238, 231, 211), LEVEL_SELECT_CONTENT, border_radius=12)
+        pygame.draw.rect(self.screen, (94, 116, 104), LEVEL_SELECT_CONTENT, width=2, border_radius=12)
 
-        self.draw_layout_cards(content)
+        self.draw_layout_cards()
         for button in self.level_select_buttons():
             self.draw_button(button)
 
-    def draw_layout_cards(self, content: pygame.Rect) -> None:
+    def draw_layout_cards(self) -> None:
         keys = LEVEL_OPTIONS[self.selected_difficulty]
+        gap = 24
+        card_w, card_h = LEVEL_CARD_SIZE
+        total_w = len(keys) * card_w + max(0, len(keys) - 1) * gap
+        start_x = LEVEL_SELECT_CONTENT.centerx - total_w // 2
+        card_y = LEVEL_SELECT_CONTENT.y + 64
         for index, level_key in enumerate(keys):
             level = LEVELS[level_key]
-            card = pygame.Rect(content.x + 42 + index * 278, content.y + 72, 250, 310)
+            card = pygame.Rect(
+                start_x + index * (card_w + gap),
+                card_y,
+                card_w,
+                card_h,
+            )
             pygame.draw.rect(self.screen, (250, 246, 232), card, border_radius=10)
             pygame.draw.rect(self.screen, (152, 130, 86), card, width=2, border_radius=10)
-            self.draw_level_preview(level_key, pygame.Rect(card.x + 24, card.y + 28, 202, 150))
+            self.draw_level_preview(level_key, pygame.Rect(card.x + 24, card.y + 24, 216, 156))
             title = self.large_font.render(level.name.split(" ", 1)[1], True, INK)
-            self.screen.blit(title, (card.x + 24, card.y + 198))
+            self.screen.blit(title, (card.x + 24, card.y + 202))
             meta = f"{len(level.coords)} tiles"
             meta_surf = self.font.render(meta, True, (88, 100, 94))
-            self.screen.blit(meta_surf, (card.x + 24, card.y + 240))
+            self.screen.blit(meta_surf, (card.x + 24, card.y + 246))
 
     def draw_level_preview(self, level_key: str, rect: pygame.Rect) -> None:
         coords = LEVELS[level_key].coords
@@ -517,25 +528,46 @@ class MahjongApp:
 
     def level_select_buttons(self) -> list[Button]:
         buttons: list[Button] = []
+        tab_x = LEVEL_SELECT_SIDEBAR.x + 24
+        tab_y = LEVEL_SELECT_SIDEBAR.y + 34
+        tab_w = LEVEL_SELECT_SIDEBAR.width - 48
         for index, key in enumerate(DIFFICULTIES):
             buttons.append(
                 Button(
                     DIFFICULTY_LABELS[key],
-                    pygame.Rect(76, 174 + index * 78, 192, 54),
+                    pygame.Rect(tab_x, tab_y + index * 72, tab_w, 52),
                     f"tab:{key}",
                     variant="tab",
                 )
             )
         keys = LEVEL_OPTIONS[self.selected_difficulty]
+        gap = 24
+        card_w, card_h = LEVEL_CARD_SIZE
+        total_w = len(keys) * card_w + max(0, len(keys) - 1) * gap
+        start_x = LEVEL_SELECT_CONTENT.centerx - total_w // 2
+        card_y = LEVEL_SELECT_CONTENT.y + 64
         for index, level_key in enumerate(keys):
+            card_x = start_x + index * (card_w + gap)
             buttons.append(
                 Button(
                     "Play",
-                    pygame.Rect(372 + index * 278, 452, 174, 48),
+                    pygame.Rect(card_x + 24, card_y + card_h - 72, card_w - 48, 48),
                     f"level:{level_key}",
                 )
             )
-        buttons.append(Button("Back", pygame.Rect(76, 576, 192, 48), "menu", variant="secondary"))
+        buttons.append(
+            Button(
+                "Back",
+                pygame.Rect(
+                    tab_x,
+                    LEVEL_SELECT_SIDEBAR.bottom - 72,
+                    tab_w,
+                    48,
+                ),
+                "menu",
+                variant="secondary",
+            )
+        )
         return buttons
 
     def toolbar_buttons(self) -> list[Button]:
