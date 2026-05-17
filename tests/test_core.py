@@ -88,6 +88,14 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(len(LEVELS["medium"].coords), 144)
         self.assertEqual(len(LEVELS["hard"].coords), 144)
 
+    def test_layouts_use_aligned_tile_grid(self):
+        for key, level in LEVELS.items():
+            with self.subTest(level=key):
+                self.assertEqual(len(level.coords), len(set(level.coords)))
+                for coord in level.coords:
+                    self.assertEqual(coord.x % 2, 0)
+                    self.assertEqual(coord.y % 2, 0)
+
     def test_seeded_generation_changes_pairing_layout(self):
         for key, level in LEVELS.items():
             with self.subTest(level=key):
