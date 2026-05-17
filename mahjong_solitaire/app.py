@@ -15,7 +15,7 @@ from .levels import LEVELS
 
 WINDOW_SIZE = (1280, 800)
 FPS = 60
-TILE_WIDTH = 58
+TILE_WIDTH = 52
 TILE_HEIGHT = 74
 CELL_WIDTH = TILE_WIDTH // 2
 CELL_HEIGHT = TILE_HEIGHT // 2
@@ -32,8 +32,7 @@ LEVEL_OPTIONS = {
 LEVEL_SELECT_SIDEBAR = pygame.Rect(64, 154, 220, 526)
 LEVEL_SELECT_CONTENT = pygame.Rect(320, 154, 896, 526)
 LEVEL_CARD_SIZE = (264, 344)
-TILE_ASSET_DIR = Path(__file__).resolve().parent.parent / "assets" / "tiles" / "regular"
-BONUS_TILE_ASSET_DIR = Path(__file__).resolve().parent.parent / "assets" / "tiles" / "bonus"
+TILE_ASSET_DIR = Path(__file__).resolve().parent.parent / "assets" / "tiles"
 
 BG_TOP = (11, 30, 38)
 BG_BOTTOM = (28, 91, 82)
@@ -77,17 +76,14 @@ class Particle:
 
 
 class TileArt:
-    def __init__(self, small_font: pygame.font.Font) -> None:
-        self.small_font = small_font
+    def __init__(self) -> None:
         self.source_images = self.load_source_images()
         self.scaled_cache: dict[str, pygame.Surface] = {}
 
     def load_source_images(self) -> dict[str, pygame.Surface]:
         images: dict[str, pygame.Surface] = {}
-        for path in [*TILE_ASSET_DIR.glob("*.png"), *BONUS_TILE_ASSET_DIR.glob("*.png")]:
+        for path in TILE_ASSET_DIR.glob("*.svg"):
             images[path.stem] = pygame.image.load(path).convert_alpha()
-        if "Front" not in images:
-            raise RuntimeError(f"Missing tile art asset: {TILE_ASSET_DIR / 'Front.png'}")
         return images
 
     def surface_for(self, tile: Tile) -> pygame.Surface:
@@ -98,19 +94,14 @@ class TileArt:
 
     def render_tile(self, tile: Tile) -> pygame.Surface:
         asset_name = tile_asset_name(tile)
-        if tile.match_group in {"flower", "season"}:
-            source = self.source_images.get(asset_name)
-            if source is not None:
-                return pygame.transform.smoothscale(source, (TILE_WIDTH, TILE_HEIGHT))
-
-        surface = pygame.transform.smoothscale(
-            self.source_images["Front"], (TILE_WIDTH, TILE_HEIGHT)
-        )
+        surface = pygame.Surface((TILE_WIDTH, TILE_HEIGHT), pygame.SRCALPHA)
+        base = pygame.Rect(1, 1, TILE_WIDTH - 2, TILE_HEIGHT - 2)
+        pygame.draw.rect(surface, (248, 246, 237), base, border_radius=5)
         source = self.source_images.get(asset_name)
-        if source is not None:
-            symbol_rect = pygame.Rect(9, 12, TILE_WIDTH - 18, TILE_HEIGHT - 24)
-            symbol = pygame.transform.smoothscale(source, symbol_rect.size)
-            surface.blit(symbol, symbol_rect)
+        if source is None:
+            raise RuntimeError(f"Missing tile art asset: {asset_name}.svg")
+        art = pygame.transform.smoothscale(source, (TILE_WIDTH, TILE_HEIGHT))
+        surface.blit(art, (0, 0))
         return surface
 
 
@@ -124,7 +115,7 @@ class MahjongApp:
         self.large_font = pygame.font.SysFont("arial", 34, bold=True)
         self.font = pygame.font.SysFont("arial", 22)
         self.small_font = pygame.font.SysFont("arial", 17)
-        self.tile_art = TileArt(self.small_font)
+        self.tile_art = TileArt()
         self.state = ScreenState.MENU
         self.running = True
         self.board: Board | None = None
@@ -495,9 +486,6 @@ class MahjongApp:
         hovered = rect.collidepoint(pygame.mouse.get_pos()) and self.board.is_selectable(tile.id)
         art = self.tile_art.surface_for(tile)
         self.screen.blit(art, rect)
-        pygame.draw.rect(self.screen, (132, 123, 104), rect, width=2, border_radius=7)
-        pygame.draw.line(self.screen, (241, 238, 226), rect.topleft, rect.topright, 1)
-        pygame.draw.line(self.screen, (241, 238, 226), rect.topleft, rect.bottomleft, 1)
         if hovered:
             hover = pygame.Surface(rect.size, pygame.SRCALPHA)
             hover.fill((255, 250, 230, 45))
@@ -694,43 +682,68 @@ class MahjongApp:
         self.particles = active
 
 
-def face_color(group: str) -> tuple[int, int, int]:
-    if group == "characters":
-        return (166, 45, 43)
-    if group == "bamboo":
-        return (30, 112, 73)
-    if group == "dots":
-        return (42, 79, 159)
-    if group == "wind":
-        return (54, 64, 68)
-    if group == "dragon":
-        return (143, 45, 86)
-    return (112, 76, 35)
-
-
 def tile_asset_name(tile: Tile) -> str:
     if tile.match_group == "characters":
-        return f"Man{tile.face[:-1]}"
+        return {
+            "1M": "0101一萬",
+            "2M": "0102二萬",
+            "3M": "0103三萬",
+            "4M": "0104四萬",
+            "5M": "0105五萬",
+            "6M": "0106六萬",
+            "7M": "0107七萬",
+            "8M": "0108八萬",
+            "9M": "0109九萬",
+        }[tile.face]
     if tile.match_group == "dots":
-        return f"Pin{tile.face[:-1]}"
+        return {
+            "1D": "0201一餅",
+            "2D": "0202二餅",
+            "3D": "0203三餅",
+            "4D": "0204四餅",
+            "5D": "0205五餅",
+            "6D": "0206六餅",
+            "7D": "0207七餅",
+            "8D": "0208八餅",
+            "9D": "0209九餅",
+        }[tile.face]
     if tile.match_group == "bamboo":
-        return f"Sou{tile.face[:-1]}"
+        return {
+            "1B": "0301一條",
+            "2B": "0302二條",
+            "3B": "0303三條",
+            "4B": "0304四條",
+            "5B": "0305五條",
+            "6B": "0306六條",
+            "7B": "0307七條",
+            "8B": "0308八條",
+            "9B": "0309九條",
+        }[tile.face]
     if tile.match_group == "wind":
         return {
-            "East": "Ton",
-            "South": "Nan",
-            "West": "Shaa",
-            "North": "Pei",
+            "East": "0401東風",
+            "South": "0403南風",
+            "West": "0402西風",
+            "North": "0404北風",
         }[tile.face]
     if tile.match_group == "dragon":
         return {
-            "Red": "Chun",
-            "Green": "Hatsu",
-            "White": "Haku",
+            "Red": "0405中",
+            "Green": "0406發",
+            "White": "0407白",
         }[tile.face]
     if tile.match_group in {"flower", "season"}:
-        return tile.face
-    return "Front"
+        return {
+            "Spr": "0501春",
+            "Sum": "0502夏",
+            "Aut": "0503秋",
+            "Win": "0504冬",
+            "Plum": "0505梅",
+            "Orch": "0506蘭",
+            "Chry": "0507菊",
+            "Bamb": "0508竹",
+        }[tile.face]
+    raise ValueError(f"Unknown tile face: {tile.face}")
 
 
 def format_time(seconds: int) -> str:

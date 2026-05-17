@@ -6,7 +6,6 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
 
 from mahjong_solitaire.app import (
-    BONUS_TILE_ASSET_DIR,
     LEVEL_OPTIONS,
     TILE_ASSET_DIR,
     MahjongApp,
@@ -96,9 +95,7 @@ class AppFlowTests(unittest.TestCase):
                 tile = Tile(1, face, group, Coord(0, 0, 0))
                 asset = tile_asset_name(tile)
                 with self.subTest(face=face, group=group):
-                    regular_path = TILE_ASSET_DIR / f"{asset}.png"
-                    bonus_path = BONUS_TILE_ASSET_DIR / f"{asset}.png"
-                    self.assertTrue(regular_path.exists() or bonus_path.exists())
+                    self.assertTrue((TILE_ASSET_DIR / f"{asset}.svg").exists())
 
     def test_deadlock_modal_and_win_path(self):
         app = MahjongApp()
