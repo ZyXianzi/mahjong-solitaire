@@ -38,8 +38,8 @@ modal with time, move count, and hint count.
 - Three guaranteed-solvable fixed board templates for each difficulty.
 - Board generation randomizes the removable pair sequence, so repeated games do
   not use the same mirrored face placement.
-- Public-domain Mahjong tile PNGs with in-game Arabic numeral / Latin letter
-  corner labels for Western readability.
+- Public-domain Mahjong tile PNGs with padded face art and custom flower /
+  season illustrations.
 - Programmatically drawn buttons, previews, highlights, and effects.
 - No scoring, save/load, sound, or packaged app export yet.
 

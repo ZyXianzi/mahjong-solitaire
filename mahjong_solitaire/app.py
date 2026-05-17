@@ -76,8 +76,7 @@ class Particle:
 
 
 class TileArt:
-    def __init__(self, font: pygame.font.Font, small_font: pygame.font.Font) -> None:
-        self.font = font
+    def __init__(self, small_font: pygame.font.Font) -> None:
         self.small_font = small_font
         self.source_images = self.load_source_images()
         self.scaled_cache: dict[str, pygame.Surface] = {}
@@ -104,39 +103,22 @@ class TileArt:
         if tile.match_group not in {"flower", "season"}:
             source = self.source_images.get(asset_name)
             if source is not None:
-                symbol = pygame.transform.smoothscale(source, (TILE_WIDTH, TILE_HEIGHT))
-                surface.blit(symbol, (0, 0))
-        self.draw_corner_labels(surface, tile)
+                symbol_rect = pygame.Rect(9, 12, TILE_WIDTH - 18, TILE_HEIGHT - 24)
+                symbol = pygame.transform.smoothscale(source, symbol_rect.size)
+                surface.blit(symbol, symbol_rect)
         if tile.match_group in {"flower", "season"}:
             self.draw_bonus_face(surface, tile)
         return surface
 
-    def draw_corner_labels(self, surface: pygame.Surface, tile: Tile) -> None:
-        label, color = corner_label(tile)
-        text = self.font.render(label, True, color)
-        bubble = text.get_rect()
-        bubble.inflate_ip(5, 3)
-        bubble.topleft = (4, 4)
-        text_rect = text.get_rect(center=bubble.center)
-        pygame.draw.rect(surface, (250, 247, 235), bubble, border_radius=3)
-        pygame.draw.rect(surface, (126, 110, 82), bubble, width=1, border_radius=3)
-        surface.blit(text, text_rect)
-
     def draw_bonus_face(self, surface: pygame.Surface, tile: Tile) -> None:
-        color = (170, 69, 124) if tile.match_group == "flower" else (60, 116, 171)
-        name = bonus_display_name(tile.face)
-        center = pygame.Rect(8, 22, TILE_WIDTH - 16, TILE_HEIGHT - 32)
-        pygame.draw.line(
-            surface,
-            color,
-            (center.centerx, center.y + 6),
-            (center.centerx, center.bottom - 8),
-            3,
-        )
-        pygame.draw.circle(surface, color, (center.centerx - 9, center.y + 18), 6, width=2)
-        pygame.draw.circle(surface, color, (center.centerx + 9, center.y + 18), 6, width=2)
-        text = self.small_font.render(name, True, color)
-        surface.blit(text, text.get_rect(center=(center.centerx, center.bottom - 4)))
+        panel = pygame.Rect(8, 9, TILE_WIDTH - 16, TILE_HEIGHT - 18)
+        panel_color = (227, 243, 202) if tile.match_group == "flower" else (220, 239, 231)
+        pygame.draw.rect(surface, panel_color, panel, border_radius=4)
+        pygame.draw.rect(surface, (172, 200, 140), panel, width=1, border_radius=4)
+        if tile.match_group == "flower":
+            draw_flower_tile(surface, panel, tile.face)
+        else:
+            draw_season_tile(surface, panel, tile.face)
 
 
 class MahjongApp:
@@ -149,8 +131,7 @@ class MahjongApp:
         self.large_font = pygame.font.SysFont("arial", 34, bold=True)
         self.font = pygame.font.SysFont("arial", 22)
         self.small_font = pygame.font.SysFont("arial", 17)
-        self.corner_font = pygame.font.SysFont("arial", 11, bold=True)
-        self.tile_art = TileArt(self.corner_font, self.small_font)
+        self.tile_art = TileArt(self.small_font)
         self.state = ScreenState.MENU
         self.running = True
         self.board: Board | None = None
@@ -729,6 +710,130 @@ def face_color(group: str) -> tuple[int, int, int]:
     return (112, 76, 35)
 
 
+def draw_flower_tile(surface: pygame.Surface, panel: pygame.Rect, face: str) -> None:
+    green = (75, 132, 82)
+    dark_green = (42, 94, 55)
+    pink = {
+        "Plum": (206, 92, 132),
+        "Orch": (164, 89, 169),
+        "Chry": (214, 157, 54),
+        "Bamb": (60, 142, 80),
+    }[face]
+    cx = panel.centerx
+    bottom = panel.bottom - 7
+    pygame.draw.line(surface, dark_green, (cx, bottom), (cx, panel.y + 17), 2)
+
+    if face == "Bamb":
+        for offset in (-8, 0, 8):
+            x = cx + offset
+            pygame.draw.line(surface, green, (x, bottom), (x, panel.y + 10), 3)
+            for y in (panel.y + 18, panel.y + 31, panel.y + 44):
+                pygame.draw.line(surface, (236, 247, 225), (x - 3, y), (x + 3, y), 1)
+        return
+
+    if face == "Chry":
+        flower_center = (cx, panel.y + 23)
+        for angle in range(0, 360, 45):
+            dx = int(math.cos(math.radians(angle)) * 8)
+            dy = int(math.sin(math.radians(angle)) * 8)
+            petal = pygame.Rect(
+                flower_center[0] + dx - 4,
+                flower_center[1] + dy - 4,
+                8,
+                8,
+            )
+            pygame.draw.ellipse(surface, pink, petal)
+        pygame.draw.circle(surface, (126, 86, 37), flower_center, 4)
+    elif face == "Orch":
+        for point in (
+            (cx - 10, panel.y + 25),
+            (cx, panel.y + 16),
+            (cx + 10, panel.y + 25),
+        ):
+            pygame.draw.ellipse(
+                surface,
+                pink,
+                pygame.Rect(point[0] - 6, point[1] - 8, 12, 16),
+            )
+        pygame.draw.circle(surface, (236, 203, 96), (cx, panel.y + 27), 4)
+    else:
+        for point in (
+            (cx, panel.y + 15),
+            (cx - 9, panel.y + 24),
+            (cx + 9, panel.y + 24),
+            (cx - 5, panel.y + 34),
+            (cx + 5, panel.y + 34),
+        ):
+            pygame.draw.circle(surface, pink, point, 6)
+        pygame.draw.circle(surface, (235, 194, 87), (cx, panel.y + 26), 4)
+
+    pygame.draw.ellipse(surface, green, pygame.Rect(cx - 17, bottom - 18, 16, 9))
+    pygame.draw.ellipse(surface, green, pygame.Rect(cx + 1, bottom - 20, 17, 10))
+
+
+def draw_season_tile(surface: pygame.Surface, panel: pygame.Rect, face: str) -> None:
+    cx = panel.centerx
+    cy = panel.centery
+    green = (63, 132, 88)
+    blue = (73, 132, 183)
+    red = (190, 74, 62)
+    gold = (214, 155, 47)
+
+    if face == "Spr":
+        pygame.draw.line(surface, green, (cx, panel.bottom - 9), (cx, panel.y + 18), 2)
+        pygame.draw.ellipse(surface, (95, 169, 91), pygame.Rect(cx - 17, cy - 4, 16, 9))
+        pygame.draw.ellipse(surface, (95, 169, 91), pygame.Rect(cx + 1, cy - 9, 16, 9))
+        pygame.draw.circle(surface, (213, 104, 146), (cx, panel.y + 18), 6)
+    elif face == "Sum":
+        pygame.draw.circle(surface, gold, (cx, panel.y + 22), 9)
+        for angle in range(0, 360, 45):
+            start = (
+                cx + int(math.cos(math.radians(angle)) * 13),
+                panel.y + 22 + int(math.sin(math.radians(angle)) * 13),
+            )
+            end = (
+                cx + int(math.cos(math.radians(angle)) * 17),
+                panel.y + 22 + int(math.sin(math.radians(angle)) * 17),
+            )
+            pygame.draw.line(surface, gold, start, end, 2)
+        pygame.draw.arc(
+            surface,
+            blue,
+            pygame.Rect(panel.x + 7, panel.bottom - 23, panel.width - 14, 12),
+            0,
+            math.pi,
+            2,
+        )
+        pygame.draw.arc(
+            surface,
+            blue,
+            pygame.Rect(panel.x + 11, panel.bottom - 16, panel.width - 22, 10),
+            0,
+            math.pi,
+            2,
+        )
+    elif face == "Aut":
+        points = [
+            (cx, panel.y + 12),
+            (cx + 13, cy - 3),
+            (cx + 4, cy),
+            (cx + 12, cy + 15),
+            (cx, cy + 8),
+            (cx - 12, cy + 15),
+            (cx - 4, cy),
+            (cx - 13, cy - 3),
+        ]
+        pygame.draw.polygon(surface, red, points)
+        pygame.draw.line(surface, (113, 74, 44), (cx, cy + 8), (cx, panel.bottom - 8), 2)
+    else:
+        pygame.draw.circle(surface, (220, 237, 247), (cx, cy), 11, width=2)
+        for angle in range(0, 180, 30):
+            dx = int(math.cos(math.radians(angle)) * 15)
+            dy = int(math.sin(math.radians(angle)) * 15)
+            pygame.draw.line(surface, blue, (cx - dx, cy - dy), (cx + dx, cy + dy), 2)
+        pygame.draw.circle(surface, blue, (cx, cy), 3)
+
+
 def tile_asset_name(tile: Tile) -> str:
     if tile.match_group == "characters":
         return f"Man{tile.face[:-1]}"
@@ -750,39 +855,6 @@ def tile_asset_name(tile: Tile) -> str:
             "White": "Haku",
         }[tile.face]
     return "Front"
-
-
-def corner_label(tile: Tile) -> tuple[str, tuple[int, int, int]]:
-    if tile.match_group == "characters":
-        return f"{tile.face[:-1]}C", face_color(tile.match_group)
-    if tile.match_group == "dots":
-        return f"{tile.face[:-1]}D", face_color(tile.match_group)
-    if tile.match_group == "bamboo":
-        return f"{tile.face[:-1]}B", face_color(tile.match_group)
-    if tile.match_group == "wind":
-        return tile.face[0], face_color(tile.match_group)
-    if tile.match_group == "dragon":
-        return {
-            "Red": "R",
-            "Green": "G",
-            "White": "W",
-        }[tile.face], face_color(tile.match_group)
-    if tile.match_group == "flower":
-        return "F", face_color(tile.match_group)
-    return "S", face_color(tile.match_group)
-
-
-def bonus_display_name(face: str) -> str:
-    return {
-        "Plum": "Plum",
-        "Orch": "Orch",
-        "Chry": "Chry",
-        "Bamb": "Bamb",
-        "Spr": "Spr",
-        "Sum": "Sum",
-        "Aut": "Aut",
-        "Win": "Win",
-    }[face]
 
 
 def format_time(seconds: int) -> str:

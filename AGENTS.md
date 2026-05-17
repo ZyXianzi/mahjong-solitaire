@@ -21,8 +21,8 @@ Current 1.0 scope:
 - Guaranteed-solvable generated boards.
 - Hint, undo, invalid-click feedback, deadlock modal, win modal, and simple
   in-game effects.
-- Public-domain Mahjong tile PNG art with runtime Arabic numeral / Latin letter
-  corner labels.
+- Public-domain Mahjong tile PNG art with padded face art and custom flower /
+  season illustrations.
 - Programmatically drawn controls, layout previews, and effects.
 
 Out of scope for 1.0:
