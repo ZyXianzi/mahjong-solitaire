@@ -265,7 +265,8 @@ class MahjongApp:
         elapsed = self.elapsed_at_end if self.state == ScreenState.WON else int(now - self.start_time)
         stats = f"Tiles: {remaining}    Moves: {self.moves_made}    Hints: {self.hints_used}    Time: {format_time(elapsed)}"
         stats_text = self.font.render(stats, True, (208, 226, 218))
-        self.screen.blit(stats_text, (180, 34))
+        stats_x = max(180, title.get_width() + 64)
+        self.screen.blit(stats_text, (stats_x, 34))
         for button in self.toolbar_buttons():
             self.draw_button(button)
 

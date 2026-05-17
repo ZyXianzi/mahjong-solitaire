@@ -14,9 +14,7 @@ def generate_board(
 ) -> tuple[Board, list[tuple[int, int]]]:
     rng = random.Random(seed)
     for _ in range(max_attempts):
-        coords = list(level.coords)
-        rng.shuffle(coords)
-        ordered_coords = sorted(coords, key=lambda coord: (coord.z, coord.y, coord.x))
+        ordered_coords = sorted(level.coords, key=lambda coord: (coord.z, coord.y, coord.x))
         blank = Board(
             [
                 Tile(
@@ -28,7 +26,7 @@ def generate_board(
                 for index, coord in enumerate(ordered_coords)
             ]
         )
-        solution = build_open_pair_sequence(blank)
+        solution = build_open_pair_sequence(blank, rng)
         if len(solution) * 2 != len(ordered_coords):
             continue
 
@@ -53,18 +51,17 @@ def generate_board(
     raise RuntimeError(f"Could not generate a solvable {level.name} board.")
 
 
-def build_open_pair_sequence(board: Board) -> list[tuple[int, int]]:
+def build_open_pair_sequence(
+    board: Board, rng: random.Random | None = None
+) -> list[tuple[int, int]]:
+    rng = rng or random.Random()
     work = board.clone()
     sequence: list[tuple[int, int]] = []
     while work.remaining_count() > 0:
-        selectable = sorted(
-            work.selectable_tiles(),
-            key=lambda tile: (-tile.coord.z, tile.coord.y, tile.coord.x),
-        )
+        selectable = work.selectable_tiles()
         if len(selectable) < 2:
             return []
-        first = selectable[0]
-        second = selectable[1]
+        first, second = rng.sample(selectable, 2)
         first.removed = True
         second.removed = True
         sequence.append((first.id, second.id))

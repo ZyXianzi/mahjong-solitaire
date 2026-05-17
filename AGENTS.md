@@ -12,8 +12,8 @@ Current 1.0 scope:
 
 - English UI.
 - Mouse-first desktop play.
-- Easy, Medium, and Hard difficulties.
-- One fixed coordinate template per difficulty.
+- Easy Bridge, Medium Fortress, and Hard Dragon difficulties.
+- One fixed, non-axis-symmetric coordinate template per difficulty.
 - Guaranteed-solvable generated boards.
 - Hint, undo, invalid-click feedback, deadlock modal, and win modal.
 - Programmatically drawn tile art; no external image assets.
@@ -82,18 +82,19 @@ Deadlock is defined as remaining tiles > 0 and no legal selectable matching pair
 ## Generation Contract
 
 `generate_board(level)` must return a board that has at least one known solution
-path. It currently builds an open-pair removal sequence from the blank layout,
-assigns Mahjong faces to that sequence, then validates the solution path before
-returning.
+path. It currently builds a randomized open-pair removal sequence from the blank
+layout, assigns Mahjong faces to that sequence, then validates the solution path
+before returning. Different seeds should produce different pair coordinates and
+face placement.
 
 Do not weaken this contract. If level templates change, keep the generator tests
 passing for all difficulties.
 
 Current layout sizes:
 
-- Easy: 36 tiles.
-- Medium: 72 tiles.
-- Hard: 144 tiles.
+- Easy Bridge: 36 tiles.
+- Medium Fortress: 72 tiles.
+- Hard Dragon: 144 tiles.
 
 ## UI Notes
 

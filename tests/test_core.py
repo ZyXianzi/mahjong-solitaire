@@ -85,6 +85,52 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(len(LEVELS["medium"].coords), 72)
         self.assertEqual(len(LEVELS["hard"].coords), 144)
 
+    def test_level_templates_are_not_axis_symmetric(self):
+        for key, level in LEVELS.items():
+            with self.subTest(level=key):
+                self.assertFalse(is_axis_symmetric(level.coords, axis="x"))
+                self.assertFalse(is_axis_symmetric(level.coords, axis="y"))
+
+    def test_seeded_generation_changes_pairing_layout(self):
+        for key, level in LEVELS.items():
+            with self.subTest(level=key):
+                first_board, first_solution = generate_board(level, seed=1)
+                second_board, second_solution = generate_board(level, seed=2)
+
+                first_signature = board_face_signature(first_board)
+                second_signature = board_face_signature(second_board)
+                self.assertNotEqual(first_solution[:6], second_solution[:6])
+                self.assertNotEqual(first_signature, second_signature)
+
+
+def is_axis_symmetric(coords, axis):
+    coord_set = {(coord.x, coord.y, coord.z) for coord in coords}
+    min_x = min(coord.x for coord in coords)
+    max_x = max(coord.x for coord in coords)
+    min_y = min(coord.y for coord in coords)
+    max_y = max(coord.y for coord in coords)
+
+    if axis == "x":
+        return all(
+            (min_x + max_x - coord.x, coord.y, coord.z) in coord_set
+            for coord in coords
+        )
+    if axis == "y":
+        return all(
+            (coord.x, min_y + max_y - coord.y, coord.z) in coord_set
+            for coord in coords
+        )
+    raise ValueError(f"Unknown symmetry axis: {axis}")
+
+
+def board_face_signature(board):
+    return tuple(
+        sorted(
+            (tile.coord.x, tile.coord.y, tile.coord.z, tile.face, tile.match_group)
+            for tile in board.tiles
+        )
+    )
+
 
 if __name__ == "__main__":
     unittest.main()
