@@ -23,7 +23,11 @@ LAYER_DY = 8
 BOARD_TOP = 112
 DIFFICULTIES = ("easy", "medium", "hard")
 DIFFICULTY_LABELS = {"easy": "Easy", "medium": "Medium", "hard": "Hard"}
-LEVEL_OPTIONS = {"easy": ("easy",), "medium": ("medium",), "hard": ("hard",)}
+LEVEL_OPTIONS = {
+    "easy": ("easy", "easy_arena", "easy_cross"),
+    "medium": ("medium", "medium_bridge", "medium_fortress"),
+    "hard": ("hard", "hard_castle", "hard_spider"),
+}
 LEVEL_SELECT_SIDEBAR = pygame.Rect(64, 154, 220, 526)
 LEVEL_SELECT_CONTENT = pygame.Rect(320, 154, 896, 526)
 LEVEL_CARD_SIZE = (264, 344)

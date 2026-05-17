@@ -14,8 +14,10 @@ Current 1.0 scope:
 - Mouse-first desktop play.
 - Main menu has only `Start Game` and `Quit`; `Start Game` opens a tabbed layout
   selection screen.
-- Easy Pyramid, Medium Turtle, and Hard Dragon difficulties.
-- One fixed classic coordinate template per difficulty.
+- Three fixed coordinate templates per difficulty:
+  - Easy: Pyramid, Arena, Cross.
+  - Medium: Turtle, Bridge, Fortress.
+  - Hard: Dragon, Castle, Spider.
 - Guaranteed-solvable generated boards.
 - Hint, undo, invalid-click feedback, deadlock modal, win modal, and simple
   in-game effects.
@@ -25,7 +27,6 @@ Current 1.0 scope:
 Out of scope for 1.0:
 
 - Scoring, save/load, sound, packaged app export.
-- Multiple layouts per difficulty.
 - External image assets.
 
 ## Commands
@@ -48,7 +49,7 @@ UV_CACHE_DIR=.uv-cache uv run python -m unittest discover -s tests
 Headless Pygame smoke check:
 
 ```bash
-UV_CACHE_DIR=.uv-cache SDL_VIDEODRIVER=dummy uv run python -c "from mahjong_solitaire.app import MahjongApp; import time, pygame; app=MahjongApp(); [app.start_game(k) or app.draw(time.monotonic()) for k in ('easy','medium','hard')]; print('pygame smoke ok', app.board.remaining_count()); pygame.quit()"
+UV_CACHE_DIR=.uv-cache SDL_VIDEODRIVER=dummy uv run python -c "from mahjong_solitaire.app import MahjongApp; import time, pygame; app=MahjongApp(); [app.start_game(k) or app.draw(time.monotonic()) for k in ('easy','easy_arena','easy_cross','medium','medium_bridge','medium_fortress','hard','hard_castle','hard_spider')]; print('pygame smoke ok', app.board.remaining_count()); pygame.quit()"
 ```
 
 ## Code Map
@@ -56,7 +57,8 @@ UV_CACHE_DIR=.uv-cache SDL_VIDEODRIVER=dummy uv run python -c "from mahjong_soli
 - `main.py`: Root entrypoint. Starts `MahjongApp`.
 - `mahjong_solitaire/core.py`: Testable game rules and data objects:
   `Coord`, `Tile`, `Move`, `Level`, `Board`.
-- `mahjong_solitaire/levels.py`: Fixed Easy/Medium/Hard coordinate templates.
+- `mahjong_solitaire/levels.py`: Fixed coordinate templates for all selectable
+  layouts.
 - `mahjong_solitaire/generator.py`: Board generation, face assignment, and
   solution validation.
 - `mahjong_solitaire/app.py`: Pygame UI, input handling, rendering, modals, and
@@ -97,8 +99,14 @@ passing for all difficulties.
 Current layout sizes:
 
 - Easy Pyramid: 72 tiles.
+- Easy Arena: 72 tiles.
+- Easy Cross: 72 tiles.
 - Medium Turtle: 144 tiles.
+- Medium Bridge: 144 tiles.
+- Medium Fortress: 144 tiles.
 - Hard Dragon: 144 tiles.
+- Hard Castle: 144 tiles.
+- Hard Spider: 144 tiles.
 
 ## UI Notes
 
@@ -110,9 +118,8 @@ cards, and remove particles are all drawn in code.
 Current screen flow:
 
 - `MENU`: title screen with `Start Game` and `Quit`.
-- `LEVEL_SELECT`: left-side difficulty tabs and layout cards. Only one layout
-  exists per difficulty today, but `LEVEL_OPTIONS` is structured for adding
-  more.
+- `LEVEL_SELECT`: left-side difficulty tabs and layout cards. `LEVEL_OPTIONS`
+  maps each difficulty tab to its selectable layout keys.
 - `PLAYING`: table view with toolbar actions.
 - Modal overlays for deadlock, win, and startup errors.
 

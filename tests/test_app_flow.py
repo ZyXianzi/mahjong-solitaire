@@ -5,7 +5,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 import pygame
 
-from mahjong_solitaire.app import MahjongApp, ScreenState
+from mahjong_solitaire.app import LEVEL_OPTIONS, MahjongApp, ScreenState
 from mahjong_solitaire.core import Board, Coord, Tile
 
 
@@ -25,10 +25,11 @@ class AppFlowTests(unittest.TestCase):
 
         app.invoke_action("tab:hard")
         self.assertEqual(app.selected_difficulty, "hard")
-        play_buttons = [
-            button for button in app.level_select_buttons() if button.action.startswith("level:")
-        ]
-        self.assertEqual([button.action for button in play_buttons], ["level:hard"])
+        play_buttons = level_buttons(app)
+        self.assertEqual(
+            [button.action for button in play_buttons],
+            ["level:hard", "level:hard_castle", "level:hard_spider"],
+        )
 
         app.invoke_action("level:hard")
         self.assertEqual(app.state, ScreenState.PLAYING)
@@ -68,6 +69,19 @@ class AppFlowTests(unittest.TestCase):
         self.assertEqual(app.moves_made, 0)
         self.assertEqual(app.state, ScreenState.PLAYING)
 
+    def test_every_level_select_option_starts_a_board(self):
+        app = MahjongApp()
+
+        for difficulty, keys in LEVEL_OPTIONS.items():
+            app.invoke_action(f"tab:{difficulty}")
+            for key in keys:
+                with self.subTest(level=key):
+                    app.invoke_action(f"level:{key}")
+                    self.assertEqual(app.state, ScreenState.PLAYING)
+                    self.assertEqual(app.current_level, key)
+                    self.assertIsNotNone(app.board)
+                    self.assertGreater(app.board.remaining_count(), 0)
+
     def test_deadlock_modal_and_win_path(self):
         app = MahjongApp()
         app.board = Board(
@@ -89,6 +103,14 @@ class AppFlowTests(unittest.TestCase):
 
         self.assertEqual(app.state, ScreenState.WON)
         self.assertEqual(app.board.remaining_count(), 0)
+
+
+def level_buttons(app):
+    return [
+        button
+        for button in app.level_select_buttons()
+        if button.action.startswith("level:")
+    ]
 
 
 if __name__ == "__main__":

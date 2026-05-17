@@ -81,12 +81,22 @@ class GeneratorTests(unittest.TestCase):
                 self.assertTrue(validate_solution_path(board, solution))
 
     def test_level_sizes_match_prd_scale(self):
-        self.assertEqual(LEVELS["easy"].name, "Easy Pyramid")
-        self.assertEqual(LEVELS["medium"].name, "Medium Turtle")
-        self.assertEqual(LEVELS["hard"].name, "Hard Dragon")
-        self.assertEqual(len(LEVELS["easy"].coords), 72)
-        self.assertEqual(len(LEVELS["medium"].coords), 144)
-        self.assertEqual(len(LEVELS["hard"].coords), 144)
+        expected = {
+            "easy": ("Easy Pyramid", 72),
+            "easy_arena": ("Easy Arena", 72),
+            "easy_cross": ("Easy Cross", 72),
+            "medium": ("Medium Turtle", 144),
+            "medium_bridge": ("Medium Bridge", 144),
+            "medium_fortress": ("Medium Fortress", 144),
+            "hard": ("Hard Dragon", 144),
+            "hard_castle": ("Hard Castle", 144),
+            "hard_spider": ("Hard Spider", 144),
+        }
+        self.assertEqual(set(LEVELS), set(expected))
+        for key, (name, size) in expected.items():
+            with self.subTest(level=key):
+                self.assertEqual(LEVELS[key].name, name)
+                self.assertEqual(len(LEVELS[key].coords), size)
 
     def test_layouts_use_aligned_tile_grid(self):
         for key, level in LEVELS.items():

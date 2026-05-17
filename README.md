@@ -14,7 +14,9 @@ UV_CACHE_DIR=.uv-cache uv run python main.py
 ## Gameplay
 
 - Click `Start Game`, then choose a difficulty tab and layout card.
-- Current layouts are Easy Pyramid, Medium Turtle, and Hard Dragon.
+- Each difficulty currently has three selectable layouts:
+  Easy Pyramid, Easy Arena, Easy Cross, Medium Turtle, Medium Bridge,
+  Medium Fortress, Hard Dragon, Hard Castle, and Hard Spider.
 - Click two free matching Mahjong tiles to remove them.
 - A tile is free when no tile covers it and its left or right side is open.
 - Suits, winds, and dragons match identical faces.
@@ -33,13 +35,12 @@ modal with time, move count, and hint count.
 - English UI.
 - Mouse-first controls.
 - Main menu, tabbed layout selection, and polished in-game table UI.
-- One guaranteed-solvable classic board template for each difficulty.
+- Three guaranteed-solvable fixed board templates for each difficulty.
 - Board generation randomizes the removable pair sequence, so repeated games do
   not use the same mirrored face placement.
 - Programmatically drawn tiles, buttons, previews, highlights, and effects; no
   external image assets.
-- No scoring, save/load, sound, packaged app export, or multiple layouts per
-  difficulty yet.
+- No scoring, save/load, sound, or packaged app export yet.
 
 ## Tests
 
