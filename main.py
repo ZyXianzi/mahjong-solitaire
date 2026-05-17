@@ -1,5 +1,8 @@
+from mahjong_solitaire.app import MahjongApp
+
+
 def main():
-    print("Hello from mahjong-solitaire!")
+    MahjongApp().run()
 
 
 if __name__ == "__main__":

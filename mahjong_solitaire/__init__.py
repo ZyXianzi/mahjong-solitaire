@@ -1,0 +1,2 @@
+"""Mahjong Solitaire game package."""
+
