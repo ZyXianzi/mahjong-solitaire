@@ -112,9 +112,9 @@ Current layout sizes:
 ## UI Notes
 
 The Pygame app uses a fixed `1280x800` window. Rendering is intentionally
-programmatic: gradient backgrounds, rounded tiles, shadows, face labels,
+programmatic: gradient backgrounds, rounded tiles, shadows, SVG tile art,
 selection outlines, hint outlines, invalid-click flash feedback, layout preview
-cards, and remove particles are all drawn in code.
+cards, and simple effects are all drawn in code.
 
 Current screen flow:
 
@@ -126,6 +126,13 @@ Current screen flow:
 
 The player-facing text is English. Keep future UI text English unless the user
 explicitly asks to localize it.
+
+Rendering caution: a prior experimental polish pass that changed alpha/text
+surface handling looked fine in dummy screenshots but produced black rectangles
+and title text blocks in the real macOS Pygame window. For visual work, verify
+with the actual desktop window, not only `SDL_VIDEODRIVER=dummy` output. Avoid
+broad `SRCALPHA` / `convert_alpha()` refactors unless they are tested in the
+real window.
 
 ## Development Guidance
 
