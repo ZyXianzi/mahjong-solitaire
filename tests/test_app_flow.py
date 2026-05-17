@@ -5,8 +5,15 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
 import pygame
 
-from mahjong_solitaire.app import LEVEL_OPTIONS, MahjongApp, ScreenState
+from mahjong_solitaire.app import (
+    LEVEL_OPTIONS,
+    TILE_ASSET_DIR,
+    MahjongApp,
+    ScreenState,
+    tile_asset_name,
+)
 from mahjong_solitaire.core import Board, Coord, Tile
+from mahjong_solitaire.generator import build_face_pairs
 
 
 class AppFlowTests(unittest.TestCase):
@@ -81,6 +88,16 @@ class AppFlowTests(unittest.TestCase):
                     self.assertEqual(app.current_level, key)
                     self.assertIsNotNone(app.board)
                     self.assertGreater(app.board.remaining_count(), 0)
+
+    def test_tile_art_assets_cover_all_generated_suited_and_honor_faces(self):
+        for pair in build_face_pairs():
+            for face, group in pair:
+                tile = Tile(1, face, group, Coord(0, 0, 0))
+                asset = tile_asset_name(tile)
+                with self.subTest(face=face, group=group):
+                    if group in {"flower", "season"}:
+                        self.assertEqual(asset, "Front")
+                    self.assertTrue((TILE_ASSET_DIR / f"{asset}.png").exists())
 
     def test_deadlock_modal_and_win_path(self):
         app = MahjongApp()

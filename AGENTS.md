@@ -21,13 +21,13 @@ Current 1.0 scope:
 - Guaranteed-solvable generated boards.
 - Hint, undo, invalid-click feedback, deadlock modal, win modal, and simple
   in-game effects.
-- Programmatically drawn tile art, controls, layout previews, and effects; no
-  external image assets.
+- Public-domain Mahjong tile PNG art with runtime Arabic numeral / Latin letter
+  corner labels.
+- Programmatically drawn controls, layout previews, and effects.
 
 Out of scope for 1.0:
 
 - Scoring, save/load, sound, packaged app export.
-- External image assets.
 
 ## Commands
 
@@ -63,6 +63,9 @@ UV_CACHE_DIR=.uv-cache SDL_VIDEODRIVER=dummy uv run python -c "from mahjong_soli
   solution validation.
 - `mahjong_solitaire/app.py`: Pygame UI, input handling, rendering, modals, and
   game state transitions.
+- `assets/tiles/regular/`: Public-domain Mahjong tile PNGs from
+  FluffyStuff/riichi-mahjong-tiles. Keep `assets/tiles/ATTRIBUTION.md` aligned
+  if the source changes.
 - `tests/test_core.py`: Unit coverage for selection rules, matching, deadlock,
   undo, and generated board solvability.
 

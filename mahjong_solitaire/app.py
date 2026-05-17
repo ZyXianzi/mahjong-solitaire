@@ -4,6 +4,7 @@ import math
 import time
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 import pygame
 
@@ -31,6 +32,7 @@ LEVEL_OPTIONS = {
 LEVEL_SELECT_SIDEBAR = pygame.Rect(64, 154, 220, 526)
 LEVEL_SELECT_CONTENT = pygame.Rect(320, 154, 896, 526)
 LEVEL_CARD_SIZE = (264, 344)
+TILE_ASSET_DIR = Path(__file__).resolve().parent.parent / "assets" / "tiles" / "regular"
 
 BG_TOP = (11, 30, 38)
 BG_BOTTOM = (28, 91, 82)
@@ -73,6 +75,70 @@ class Particle:
     lifetime: float
 
 
+class TileArt:
+    def __init__(self, font: pygame.font.Font, small_font: pygame.font.Font) -> None:
+        self.font = font
+        self.small_font = small_font
+        self.source_images = self.load_source_images()
+        self.scaled_cache: dict[str, pygame.Surface] = {}
+
+    def load_source_images(self) -> dict[str, pygame.Surface]:
+        images: dict[str, pygame.Surface] = {}
+        for path in TILE_ASSET_DIR.glob("*.png"):
+            images[path.stem] = pygame.image.load(path).convert_alpha()
+        if "Front" not in images:
+            raise RuntimeError(f"Missing tile art asset: {TILE_ASSET_DIR / 'Front.png'}")
+        return images
+
+    def surface_for(self, tile: Tile) -> pygame.Surface:
+        cache_key = tile.face
+        if cache_key not in self.scaled_cache:
+            self.scaled_cache[cache_key] = self.render_tile(tile)
+        return self.scaled_cache[cache_key]
+
+    def render_tile(self, tile: Tile) -> pygame.Surface:
+        asset_name = tile_asset_name(tile)
+        surface = pygame.transform.smoothscale(
+            self.source_images["Front"], (TILE_WIDTH, TILE_HEIGHT)
+        )
+        if tile.match_group not in {"flower", "season"}:
+            source = self.source_images.get(asset_name)
+            if source is not None:
+                symbol = pygame.transform.smoothscale(source, (TILE_WIDTH, TILE_HEIGHT))
+                surface.blit(symbol, (0, 0))
+        self.draw_corner_labels(surface, tile)
+        if tile.match_group in {"flower", "season"}:
+            self.draw_bonus_face(surface, tile)
+        return surface
+
+    def draw_corner_labels(self, surface: pygame.Surface, tile: Tile) -> None:
+        label, color = corner_label(tile)
+        text = self.font.render(label, True, color)
+        bubble = text.get_rect()
+        bubble.inflate_ip(5, 3)
+        bubble.topleft = (4, 4)
+        text_rect = text.get_rect(center=bubble.center)
+        pygame.draw.rect(surface, (250, 247, 235), bubble, border_radius=3)
+        pygame.draw.rect(surface, (126, 110, 82), bubble, width=1, border_radius=3)
+        surface.blit(text, text_rect)
+
+    def draw_bonus_face(self, surface: pygame.Surface, tile: Tile) -> None:
+        color = (170, 69, 124) if tile.match_group == "flower" else (60, 116, 171)
+        name = bonus_display_name(tile.face)
+        center = pygame.Rect(8, 22, TILE_WIDTH - 16, TILE_HEIGHT - 32)
+        pygame.draw.line(
+            surface,
+            color,
+            (center.centerx, center.y + 6),
+            (center.centerx, center.bottom - 8),
+            3,
+        )
+        pygame.draw.circle(surface, color, (center.centerx - 9, center.y + 18), 6, width=2)
+        pygame.draw.circle(surface, color, (center.centerx + 9, center.y + 18), 6, width=2)
+        text = self.small_font.render(name, True, color)
+        surface.blit(text, text.get_rect(center=(center.centerx, center.bottom - 4)))
+
+
 class MahjongApp:
     def __init__(self) -> None:
         pygame.init()
@@ -83,6 +149,8 @@ class MahjongApp:
         self.large_font = pygame.font.SysFont("arial", 34, bold=True)
         self.font = pygame.font.SysFont("arial", 22)
         self.small_font = pygame.font.SysFont("arial", 17)
+        self.corner_font = pygame.font.SysFont("arial", 11, bold=True)
+        self.tile_art = TileArt(self.corner_font, self.small_font)
         self.state = ScreenState.MENU
         self.running = True
         self.board: Board | None = None
@@ -449,13 +517,12 @@ class MahjongApp:
         shadow = rect.move(6, 8)
         pygame.draw.rect(self.screen, (10, 24, 28), shadow, border_radius=7)
         hovered = rect.collidepoint(pygame.mouse.get_pos()) and self.board.is_selectable(tile.id)
-        base = (252, 246, 225) if self.board.is_selectable(tile.id) else (199, 196, 180)
+        art = self.tile_art.surface_for(tile)
+        self.screen.blit(art, rect)
         if hovered:
-            base = (255, 250, 234)
-        pygame.draw.rect(self.screen, base, rect, border_radius=7)
-        pygame.draw.rect(self.screen, (119, 95, 61), rect, width=2, border_radius=7)
-        inner = rect.inflate(-9, -9)
-        pygame.draw.rect(self.screen, (255, 252, 241), inner, border_radius=4)
+            hover = pygame.Surface(rect.size, pygame.SRCALPHA)
+            hover.fill((255, 250, 230, 45))
+            self.screen.blit(hover, rect)
 
         if self.selected_id == tile.id:
             pulse = int(2 + 2 * math.sin(now * 8))
@@ -465,10 +532,6 @@ class MahjongApp:
             pygame.draw.rect(self.screen, (88, 210, 153), rect.inflate(8 + pulse, 8 + pulse), width=4, border_radius=9)
         if tile.id in self.flash_tiles and now < self.flash_tiles[tile.id]:
             pygame.draw.rect(self.screen, (222, 82, 70), rect.inflate(8, 8), width=4, border_radius=9)
-
-        color = face_color(tile.match_group)
-        label = self.small_font.render(tile.face, True, color)
-        self.screen.blit(label, label.get_rect(center=rect.center))
 
     def draw_modal(self) -> None:
         overlay = pygame.Surface(WINDOW_SIZE, pygame.SRCALPHA)
@@ -664,6 +727,62 @@ def face_color(group: str) -> tuple[int, int, int]:
     if group == "dragon":
         return (143, 45, 86)
     return (112, 76, 35)
+
+
+def tile_asset_name(tile: Tile) -> str:
+    if tile.match_group == "characters":
+        return f"Man{tile.face[:-1]}"
+    if tile.match_group == "dots":
+        return f"Pin{tile.face[:-1]}"
+    if tile.match_group == "bamboo":
+        return f"Sou{tile.face[:-1]}"
+    if tile.match_group == "wind":
+        return {
+            "East": "Ton",
+            "South": "Nan",
+            "West": "Shaa",
+            "North": "Pei",
+        }[tile.face]
+    if tile.match_group == "dragon":
+        return {
+            "Red": "Chun",
+            "Green": "Hatsu",
+            "White": "Haku",
+        }[tile.face]
+    return "Front"
+
+
+def corner_label(tile: Tile) -> tuple[str, tuple[int, int, int]]:
+    if tile.match_group == "characters":
+        return f"{tile.face[:-1]}C", face_color(tile.match_group)
+    if tile.match_group == "dots":
+        return f"{tile.face[:-1]}D", face_color(tile.match_group)
+    if tile.match_group == "bamboo":
+        return f"{tile.face[:-1]}B", face_color(tile.match_group)
+    if tile.match_group == "wind":
+        return tile.face[0], face_color(tile.match_group)
+    if tile.match_group == "dragon":
+        return {
+            "Red": "R",
+            "Green": "G",
+            "White": "W",
+        }[tile.face], face_color(tile.match_group)
+    if tile.match_group == "flower":
+        return "F", face_color(tile.match_group)
+    return "S", face_color(tile.match_group)
+
+
+def bonus_display_name(face: str) -> str:
+    return {
+        "Plum": "Plum",
+        "Orch": "Orch",
+        "Chry": "Chry",
+        "Bamb": "Bamb",
+        "Spr": "Spr",
+        "Sum": "Sum",
+        "Aut": "Aut",
+        "Win": "Win",
+    }[face]
 
 
 def format_time(seconds: int) -> str:

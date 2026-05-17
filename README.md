@@ -38,9 +38,17 @@ modal with time, move count, and hint count.
 - Three guaranteed-solvable fixed board templates for each difficulty.
 - Board generation randomizes the removable pair sequence, so repeated games do
   not use the same mirrored face placement.
-- Programmatically drawn tiles, buttons, previews, highlights, and effects; no
-  external image assets.
+- Public-domain Mahjong tile PNGs with in-game Arabic numeral / Latin letter
+  corner labels for Western readability.
+- Programmatically drawn buttons, previews, highlights, and effects.
 - No scoring, save/load, sound, or packaged app export yet.
+
+## Art Credits
+
+Tile face art comes from
+[FluffyStuff/riichi-mahjong-tiles](https://github.com/FluffyStuff/riichi-mahjong-tiles),
+which publishes the assets in the public domain. See
+`assets/tiles/ATTRIBUTION.md`.
 
 ## Tests
 
