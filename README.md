@@ -13,7 +13,7 @@ UV_CACHE_DIR=.uv-cache uv run python main.py
 
 ## Gameplay
 
-- Choose Easy Bridge, Medium Fortress, or Hard Dragon from the main menu.
+- Choose Easy Pyramid, Medium Turtle, or Hard Dragon from the main menu.
 - Click two free matching Mahjong tiles to remove them.
 - A tile is free when no tile covers it and its left or right side is open.
 - Suits, winds, and dragons match identical faces.
@@ -31,7 +31,7 @@ modal with time, move count, and hint count.
 
 - English UI.
 - Mouse-first controls.
-- One guaranteed-solvable, non-axis-symmetric board template for each difficulty.
+- One guaranteed-solvable classic board template for each difficulty.
 - Board generation randomizes the removable pair sequence, so repeated games do
   not use the same mirrored face placement.
 - Programmatically drawn tiles; no external image assets.

@@ -16,7 +16,7 @@ class AppFlowTests(unittest.TestCase):
     def test_level_start_hint_invalid_click_match_and_undo(self):
         app = MahjongApp()
 
-        for key, expected_count in (("easy", 36), ("medium", 72), ("hard", 144)):
+        for key, expected_count in (("easy", 72), ("medium", 144), ("hard", 144)):
             with self.subTest(level=key):
                 app.start_game(key)
                 self.assertEqual(app.state, ScreenState.PLAYING)
@@ -36,12 +36,12 @@ class AppFlowTests(unittest.TestCase):
         first_id, second_id = app.board.legal_pairs()[0]
         app.click_tile(app.board.tile(first_id))
         app.click_tile(app.board.tile(second_id))
-        self.assertEqual(app.board.remaining_count(), 34)
+        self.assertEqual(app.board.remaining_count(), 70)
         self.assertEqual(len(app.history), 1)
         self.assertEqual(app.moves_made, 1)
 
         app.undo()
-        self.assertEqual(app.board.remaining_count(), 36)
+        self.assertEqual(app.board.remaining_count(), 72)
         self.assertEqual(len(app.history), 0)
         self.assertEqual(app.moves_made, 0)
         self.assertEqual(app.state, ScreenState.PLAYING)

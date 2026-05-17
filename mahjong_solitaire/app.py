@@ -354,9 +354,9 @@ class MahjongApp:
     def menu_buttons(self) -> list[Button]:
         x = WINDOW_SIZE[0] // 2 - 130
         return [
-            Button("Easy", pygame.Rect(x, 285, 260, 56), "easy"),
-            Button("Medium", pygame.Rect(x, 365, 260, 56), "medium"),
-            Button("Hard", pygame.Rect(x, 445, 260, 56), "hard"),
+            Button("Easy Pyramid", pygame.Rect(x, 285, 260, 56), "easy"),
+            Button("Medium Turtle", pygame.Rect(x, 365, 260, 56), "medium"),
+            Button("Hard Dragon", pygame.Rect(x, 445, 260, 56), "hard"),
             Button("Quit", pygame.Rect(x, 545, 260, 56), "quit"),
         ]
 

@@ -12,8 +12,8 @@ Current 1.0 scope:
 
 - English UI.
 - Mouse-first desktop play.
-- Easy Bridge, Medium Fortress, and Hard Dragon difficulties.
-- One fixed, non-axis-symmetric coordinate template per difficulty.
+- Easy Pyramid, Medium Turtle, and Hard Dragon difficulties.
+- One fixed classic coordinate template per difficulty.
 - Guaranteed-solvable generated boards.
 - Hint, undo, invalid-click feedback, deadlock modal, and win modal.
 - Programmatically drawn tile art; no external image assets.
@@ -92,8 +92,8 @@ passing for all difficulties.
 
 Current layout sizes:
 
-- Easy Bridge: 36 tiles.
-- Medium Fortress: 72 tiles.
+- Easy Pyramid: 72 tiles.
+- Medium Turtle: 144 tiles.
 - Hard Dragon: 144 tiles.
 
 ## UI Notes
