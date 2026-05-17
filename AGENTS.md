@@ -111,10 +111,15 @@ Current layout sizes:
 
 ## UI Notes
 
-The Pygame app uses a fixed `1280x800` window. Rendering is intentionally
-programmatic: gradient backgrounds, rounded tiles, shadows, SVG tile art,
-selection outlines, hint outlines, invalid-click flash feedback, layout preview
-cards, and simple effects are all drawn in code.
+The Pygame app uses a fixed `1280x800` logical window. It creates the window via
+`pygame.Window(..., allow_high_dpi=True)` when available, then draws to the
+actual window surface. On Retina displays that surface may be `2560x1600`, so
+rendering code must scale logical coordinates through the app helpers before
+drawing to `self.screen`.
+
+Rendering is intentionally programmatic: gradient backgrounds, rounded tiles,
+shadows, SVG tile art, selection outlines, hint outlines, invalid-click flash
+feedback, layout preview cards, and simple effects are all drawn in code.
 
 Current screen flow:
 
@@ -132,7 +137,9 @@ surface handling looked fine in dummy screenshots but produced black rectangles
 and title text blocks in the real macOS Pygame window. For visual work, verify
 with the actual desktop window, not only `SDL_VIDEODRIVER=dummy` output. Avoid
 broad `SRCALPHA` / `convert_alpha()` refactors unless they are tested in the
-real window.
+real window. Also avoid raw `pygame.draw.*` calls with logical rects in new UI
+code; use `draw_rect()`, `draw_line()`, `scaled_rect()`, and `scaled_pos()` so
+high-DPI rendering remains sharp.
 
 ## Development Guidance
 

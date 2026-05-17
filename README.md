@@ -44,7 +44,9 @@ UV_CACHE_DIR=.uv-cache uv sync
 UV_CACHE_DIR=.uv-cache uv run python main.py
 ```
 
-The game opens a fixed `1280x800` Pygame window.
+The game opens a fixed `1280x800` logical Pygame window. On high-DPI displays,
+the app uses the newer `pygame.Window` API with `allow_high_dpi=True` and draws
+to the full Retina framebuffer when available.
 
 ## How To Play
 
@@ -136,3 +138,6 @@ can miss macOS display-backend rendering issues.
 - Keep player-facing text in English unless localization is explicitly planned.
 - The tile renderer depends on the SVG filenames in `assets/tiles/`; update
   `tile_asset_name()` in `mahjong_solitaire/app.py` if the asset set changes.
+- Rendering uses logical coordinates and scales drawing operations to the actual
+  window surface. If you add new drawing code, use the app's scaling helpers
+  instead of drawing raw logical `pygame.Rect` values directly to `self.screen`.

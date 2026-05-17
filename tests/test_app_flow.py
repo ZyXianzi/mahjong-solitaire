@@ -10,6 +10,7 @@ from mahjong_solitaire.app import (
     TILE_ASSET_DIR,
     MahjongApp,
     ScreenState,
+    scale_value,
     tile_asset_name,
 )
 from mahjong_solitaire.core import Board, Coord, Tile
@@ -88,6 +89,21 @@ class AppFlowTests(unittest.TestCase):
                     self.assertEqual(app.current_level, key)
                     self.assertIsNotNone(app.board)
                     self.assertGreater(app.board.remaining_count(), 0)
+
+    def test_high_dpi_scaling_helpers_keep_fill_width_zero(self):
+        self.assertEqual(scale_value(0, 2), 0)
+        self.assertEqual(scale_value(1, 2), 2)
+        self.assertEqual(scale_value(-1, 2), -2)
+
+        app = MahjongApp()
+        self.assertGreaterEqual(app.render_scale, 1)
+        self.assertEqual(
+            app.scaled_rect(pygame.Rect(10, 20, 30, 40)).size,
+            (
+                scale_value(30, app.render_scale),
+                scale_value(40, app.render_scale),
+            ),
+        )
 
     def test_tile_art_assets_cover_all_generated_suited_and_honor_faces(self):
         for pair in build_face_pairs():
