@@ -12,11 +12,15 @@ Current 1.0 scope:
 
 - English UI.
 - Mouse-first desktop play.
+- Main menu has only `Start Game` and `Quit`; `Start Game` opens a tabbed layout
+  selection screen.
 - Easy Pyramid, Medium Turtle, and Hard Dragon difficulties.
 - One fixed classic coordinate template per difficulty.
 - Guaranteed-solvable generated boards.
-- Hint, undo, invalid-click feedback, deadlock modal, and win modal.
-- Programmatically drawn tile art; no external image assets.
+- Hint, undo, invalid-click feedback, deadlock modal, win modal, and simple
+  in-game effects.
+- Programmatically drawn tile art, controls, layout previews, and effects; no
+  external image assets.
 
 Out of scope for 1.0:
 
@@ -99,8 +103,18 @@ Current layout sizes:
 ## UI Notes
 
 The Pygame app uses a fixed `1280x800` window. Rendering is intentionally
-programmatic: rounded tiles, shadows, face labels, selection outlines, hint
-outlines, and invalid-click flash feedback are all drawn in code.
+programmatic: gradient backgrounds, rounded tiles, shadows, face labels,
+selection outlines, hint outlines, invalid-click flash feedback, layout preview
+cards, and remove particles are all drawn in code.
+
+Current screen flow:
+
+- `MENU`: title screen with `Start Game` and `Quit`.
+- `LEVEL_SELECT`: left-side difficulty tabs and layout cards. Only one layout
+  exists per difficulty today, but `LEVEL_OPTIONS` is structured for adding
+  more.
+- `PLAYING`: table view with toolbar actions.
+- Modal overlays for deadlock, win, and startup errors.
 
 The player-facing text is English. Keep future UI text English unless the user
 explicitly asks to localize it.

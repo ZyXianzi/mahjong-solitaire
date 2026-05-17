@@ -13,6 +13,28 @@ class AppFlowTests(unittest.TestCase):
     def tearDown(self):
         pygame.quit()
 
+    def test_menu_and_level_select_flow(self):
+        app = MahjongApp()
+
+        self.assertEqual([button.label for button in app.menu_buttons()], ["Start Game", "Quit"])
+        app.invoke_action("level_select")
+        self.assertEqual(app.state, ScreenState.LEVEL_SELECT)
+
+        tab_actions = [button.action for button in app.level_select_buttons()[:3]]
+        self.assertEqual(tab_actions, ["tab:easy", "tab:medium", "tab:hard"])
+
+        app.invoke_action("tab:hard")
+        self.assertEqual(app.selected_difficulty, "hard")
+        play_buttons = [
+            button for button in app.level_select_buttons() if button.action.startswith("level:")
+        ]
+        self.assertEqual([button.action for button in play_buttons], ["level:hard"])
+
+        app.invoke_action("level:hard")
+        self.assertEqual(app.state, ScreenState.PLAYING)
+        self.assertEqual(app.current_level, "hard")
+        self.assertEqual(app.board.remaining_count(), 144)
+
     def test_level_start_hint_invalid_click_match_and_undo(self):
         app = MahjongApp()
 

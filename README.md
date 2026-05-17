@@ -13,7 +13,8 @@ UV_CACHE_DIR=.uv-cache uv run python main.py
 
 ## Gameplay
 
-- Choose Easy Pyramid, Medium Turtle, or Hard Dragon from the main menu.
+- Click `Start Game`, then choose a difficulty tab and layout card.
+- Current layouts are Easy Pyramid, Medium Turtle, and Hard Dragon.
 - Click two free matching Mahjong tiles to remove them.
 - A tile is free when no tile covers it and its left or right side is open.
 - Suits, winds, and dragons match identical faces.
@@ -21,7 +22,7 @@ UV_CACHE_DIR=.uv-cache uv run python main.py
 - `Hint` highlights one legal pair.
 - `Undo` restores the previous removed pair.
 - `Restart` starts the current difficulty again.
-- `Menu` exits the current board.
+- `Menu` exits the current board and returns to layout selection.
 
 If no legal pair remains, the game shows a `No Moves Available` modal. You can
 undo the last move or exit to the menu. Clearing every tile shows the completion
@@ -31,10 +32,12 @@ modal with time, move count, and hint count.
 
 - English UI.
 - Mouse-first controls.
+- Main menu, tabbed layout selection, and polished in-game table UI.
 - One guaranteed-solvable classic board template for each difficulty.
 - Board generation randomizes the removable pair sequence, so repeated games do
   not use the same mirrored face placement.
-- Programmatically drawn tiles; no external image assets.
+- Programmatically drawn tiles, buttons, previews, highlights, and effects; no
+  external image assets.
 - No scoring, save/load, sound, packaged app export, or multiple layouts per
   difficulty yet.
 

@@ -21,10 +21,25 @@ CELL_HEIGHT = TILE_HEIGHT // 2
 LAYER_DX = 8
 LAYER_DY = 8
 BOARD_TOP = 112
+DIFFICULTIES = ("easy", "medium", "hard")
+DIFFICULTY_LABELS = {"easy": "Easy", "medium": "Medium", "hard": "Hard"}
+LEVEL_OPTIONS = {"easy": ("easy",), "medium": ("medium",), "hard": ("hard",)}
+
+BG_TOP = (11, 30, 38)
+BG_BOTTOM = (28, 91, 82)
+PANEL = (16, 44, 51)
+PANEL_LIGHT = (25, 69, 72)
+GOLD = (229, 184, 82)
+GOLD_LIGHT = (246, 205, 101)
+GOLD_DARK = (139, 101, 44)
+TEXT = (248, 242, 226)
+MUTED_TEXT = (187, 209, 201)
+INK = (37, 41, 39)
 
 
 class ScreenState(Enum):
     MENU = "menu"
+    LEVEL_SELECT = "level_select"
     PLAYING = "playing"
     DEADLOCK = "deadlock"
     WON = "won"
@@ -37,6 +52,18 @@ class Button:
     rect: pygame.Rect
     action: str
     enabled: bool = True
+    variant: str = "primary"
+
+
+@dataclass
+class Particle:
+    x: float
+    y: float
+    vx: float
+    vy: float
+    color: tuple[int, int, int]
+    born: float
+    lifetime: float
 
 
 class MahjongApp:
@@ -54,6 +81,7 @@ class MahjongApp:
         self.board: Board | None = None
         self.solution: list[tuple[int, int]] = []
         self.current_level = "easy"
+        self.selected_difficulty = "easy"
         self.selected_id: int | None = None
         self.hint_pair: tuple[int, int] | None = None
         self.history: list[Move] = []
@@ -66,6 +94,7 @@ class MahjongApp:
         self.flash_tiles: dict[int, float] = {}
         self.tile_rects: dict[int, pygame.Rect] = {}
         self.error_message = ""
+        self.particles: list[Particle] = []
 
     def run(self) -> None:
         while self.running:
@@ -106,6 +135,8 @@ class MahjongApp:
         pos = event.pos
         if self.state == ScreenState.MENU:
             self.handle_menu_click(pos)
+        elif self.state == ScreenState.LEVEL_SELECT:
+            self.handle_level_select_click(pos)
         elif self.state == ScreenState.PLAYING:
             self.handle_play_click(pos)
         elif self.state in {ScreenState.DEADLOCK, ScreenState.WON, ScreenState.ERROR}:
@@ -117,7 +148,13 @@ class MahjongApp:
                 if button.action == "quit":
                     self.running = False
                 else:
-                    self.start_game(button.action)
+                    self.invoke_action(button.action)
+
+    def handle_level_select_click(self, pos: tuple[int, int]) -> None:
+        for button in self.level_select_buttons():
+            if button.enabled and button.rect.collidepoint(pos):
+                self.invoke_action(button.action)
+                return
 
     def handle_play_click(self, pos: tuple[int, int]) -> None:
         for button in self.toolbar_buttons():
@@ -138,6 +175,12 @@ class MahjongApp:
     def invoke_action(self, action: str) -> None:
         if action == "hint":
             self.show_hint()
+        elif action == "level_select":
+            self.state = ScreenState.LEVEL_SELECT
+        elif action.startswith("tab:"):
+            self.selected_difficulty = action.split(":", 1)[1]
+        elif action.startswith("level:"):
+            self.start_game(action.split(":", 1)[1])
         elif action == "undo":
             self.undo()
         elif action == "restart":
@@ -165,8 +208,12 @@ class MahjongApp:
             return
 
         if self.board.can_match(self.selected_id, tile.id):
+            first_rect = self.tile_rects.get(self.selected_id)
+            second_rect = self.tile_rects.get(tile.id)
             move = self.board.remove_pair(self.selected_id, tile.id)
             self.history.append(move)
+            if first_rect and second_rect:
+                self.add_remove_burst(first_rect.center, second_rect.center)
             self.selected_id = None
             self.hint_pair = None
             self.moves_made += 1
@@ -216,6 +263,25 @@ class MahjongApp:
         self.status_text = message
         self.status_until = time.monotonic() + seconds
 
+    def add_remove_burst(
+        self, first: tuple[int, int], second: tuple[int, int]
+    ) -> None:
+        now = time.monotonic()
+        vectors = ((-36, -36), (-18, -48), (16, -44), (34, -28), (24, 10), (-26, 12))
+        for center in (first, second):
+            for vx, vy in vectors:
+                self.particles.append(
+                    Particle(
+                        x=float(center[0]),
+                        y=float(center[1]),
+                        vx=vx,
+                        vy=vy,
+                        color=GOLD_LIGHT,
+                        born=now,
+                        lifetime=0.45,
+                    )
+                )
+
     def tile_at_pos(self, pos: tuple[int, int]) -> Tile | None:
         if self.board is None:
             return None
@@ -230,21 +296,93 @@ class MahjongApp:
         return None
 
     def draw(self, now: float) -> None:
-        self.screen.fill((35, 83, 80))
+        self.draw_background()
         if self.state == ScreenState.MENU:
-            self.draw_menu()
+            self.draw_menu(now)
+        elif self.state == ScreenState.LEVEL_SELECT:
+            self.draw_level_select()
         else:
             self.draw_game(now)
             if self.state in {ScreenState.DEADLOCK, ScreenState.WON, ScreenState.ERROR}:
                 self.draw_modal()
 
-    def draw_menu(self) -> None:
-        title = self.title_font.render("Mahjong Solitaire", True, (248, 242, 226))
-        self.screen.blit(title, title.get_rect(center=(WINDOW_SIZE[0] // 2, 150)))
-        subtitle = self.font.render("Choose a difficulty", True, (208, 226, 218))
-        self.screen.blit(subtitle, subtitle.get_rect(center=(WINDOW_SIZE[0] // 2, 215)))
+    def draw_background(self) -> None:
+        height = WINDOW_SIZE[1]
+        for y in range(0, height, 4):
+            t = y / height
+            color = tuple(
+                int(BG_TOP[index] * (1 - t) + BG_BOTTOM[index] * t)
+                for index in range(3)
+            )
+            pygame.draw.rect(self.screen, color, pygame.Rect(0, y, WINDOW_SIZE[0], 4))
+        for x in range(60, WINDOW_SIZE[0], 120):
+            pygame.draw.line(self.screen, (31, 103, 94), (x, 92), (x - 220, 800), 1)
+
+    def draw_menu(self, now: float) -> None:
+        glow_alpha = int(34 + 20 * math.sin(now * 1.5))
+        glow = pygame.Surface((620, 190), pygame.SRCALPHA)
+        pygame.draw.ellipse(glow, (235, 198, 118, glow_alpha), glow.get_rect())
+        self.screen.blit(glow, glow.get_rect(center=(WINDOW_SIZE[0] // 2, 178)))
+
+        title = self.title_font.render("Mahjong Solitaire", True, TEXT)
+        self.screen.blit(title, title.get_rect(center=(WINDOW_SIZE[0] // 2, 158)))
+        subtitle = self.font.render("A quiet tile-matching table", True, MUTED_TEXT)
+        self.screen.blit(subtitle, subtitle.get_rect(center=(WINDOW_SIZE[0] // 2, 222)))
         for button in self.menu_buttons():
             self.draw_button(button)
+
+    def draw_level_select(self) -> None:
+        title = self.large_font.render("Select Layout", True, TEXT)
+        self.screen.blit(title, (54, 48))
+        subtitle = self.font.render("Choose a difficulty tab, then start a layout.", True, MUTED_TEXT)
+        self.screen.blit(subtitle, (54, 92))
+
+        tab_panel = pygame.Rect(52, 140, 240, 500)
+        pygame.draw.rect(self.screen, PANEL, tab_panel, border_radius=10)
+        pygame.draw.rect(self.screen, (51, 112, 105), tab_panel, width=2, border_radius=10)
+
+        content = pygame.Rect(330, 140, 870, 500)
+        pygame.draw.rect(self.screen, (238, 231, 211), content, border_radius=12)
+        pygame.draw.rect(self.screen, (94, 116, 104), content, width=2, border_radius=12)
+
+        self.draw_layout_cards(content)
+        for button in self.level_select_buttons():
+            self.draw_button(button)
+
+    def draw_layout_cards(self, content: pygame.Rect) -> None:
+        keys = LEVEL_OPTIONS[self.selected_difficulty]
+        for index, level_key in enumerate(keys):
+            level = LEVELS[level_key]
+            card = pygame.Rect(content.x + 42 + index * 278, content.y + 72, 250, 310)
+            pygame.draw.rect(self.screen, (250, 246, 232), card, border_radius=10)
+            pygame.draw.rect(self.screen, (152, 130, 86), card, width=2, border_radius=10)
+            self.draw_level_preview(level_key, pygame.Rect(card.x + 24, card.y + 28, 202, 150))
+            title = self.large_font.render(level.name.split(" ", 1)[1], True, INK)
+            self.screen.blit(title, (card.x + 24, card.y + 198))
+            meta = f"{len(level.coords)} tiles"
+            meta_surf = self.font.render(meta, True, (88, 100, 94))
+            self.screen.blit(meta_surf, (card.x + 24, card.y + 240))
+
+    def draw_level_preview(self, level_key: str, rect: pygame.Rect) -> None:
+        coords = LEVELS[level_key].coords
+        min_x = min(coord.x for coord in coords)
+        max_x = max(coord.x for coord in coords)
+        min_y = min(coord.y for coord in coords)
+        max_y = max(coord.y for coord in coords)
+        span_x = max(1, max_x - min_x + 2)
+        span_y = max(1, max_y - min_y + 2)
+        scale = min(rect.width / span_x, rect.height / span_y)
+        tile_w = max(5, int(scale * 1.75))
+        tile_h = max(7, int(scale * 1.9))
+        ox = rect.centerx - span_x * scale / 2
+        oy = rect.centery - span_y * scale / 2
+        pygame.draw.rect(self.screen, (29, 82, 76), rect, border_radius=8)
+        for coord in sorted(coords, key=lambda item: (item.z, item.y, item.x)):
+            x = ox + (coord.x - min_x) * scale - coord.z * 2
+            y = oy + (coord.y - min_y) * scale - coord.z * 2
+            mini = pygame.Rect(int(x), int(y), tile_w, tile_h)
+            pygame.draw.rect(self.screen, (244, 234, 202), mini, border_radius=2)
+            pygame.draw.rect(self.screen, (115, 99, 73), mini, width=1, border_radius=2)
 
     def draw_game(self, now: float) -> None:
         self.draw_toolbar(now)
@@ -253,18 +391,19 @@ class MahjongApp:
         self.compute_tile_rects()
         for tile in sorted(self.board.active_tiles(), key=lambda item: (item.coord.z, item.coord.y, item.coord.x)):
             self.draw_tile(tile, now)
+        self.draw_particles(now)
         if now < self.status_until:
-            text = self.font.render(self.status_text, True, (255, 238, 172))
-            self.screen.blit(text, (40, WINDOW_SIZE[1] - 44))
+            self.draw_status_bar()
 
     def draw_toolbar(self, now: float) -> None:
-        pygame.draw.rect(self.screen, (22, 47, 50), pygame.Rect(0, 0, WINDOW_SIZE[0], 88))
-        title = self.large_font.render(LEVELS[self.current_level].name, True, (248, 242, 226))
+        pygame.draw.rect(self.screen, PANEL, pygame.Rect(0, 0, WINDOW_SIZE[0], 88))
+        pygame.draw.line(self.screen, (51, 113, 105), (0, 87), (WINDOW_SIZE[0], 87), 2)
+        title = self.large_font.render(LEVELS[self.current_level].name, True, TEXT)
         self.screen.blit(title, (34, 22))
         remaining = self.board.remaining_count() if self.board else 0
         elapsed = self.elapsed_at_end if self.state == ScreenState.WON else int(now - self.start_time)
         stats = f"Tiles: {remaining}    Moves: {self.moves_made}    Hints: {self.hints_used}    Time: {format_time(elapsed)}"
-        stats_text = self.font.render(stats, True, (208, 226, 218))
+        stats_text = self.font.render(stats, True, MUTED_TEXT)
         stats_x = max(180, title.get_width() + 64)
         self.screen.blit(stats_text, (stats_x, 34))
         for button in self.toolbar_buttons():
@@ -292,18 +431,23 @@ class MahjongApp:
         rect = self.tile_rects[tile.id].copy()
         if tile.id in self.flash_tiles and now < self.flash_tiles[tile.id]:
             rect.x += int(math.sin(now * 70) * 4)
-        shadow = rect.move(5, 7)
-        pygame.draw.rect(self.screen, (15, 36, 37), shadow, border_radius=7)
-        base = (241, 232, 205) if self.board.is_selectable(tile.id) else (193, 191, 176)
+        shadow = rect.move(6, 8)
+        pygame.draw.rect(self.screen, (10, 24, 28), shadow, border_radius=7)
+        hovered = rect.collidepoint(pygame.mouse.get_pos()) and self.board.is_selectable(tile.id)
+        base = (252, 246, 225) if self.board.is_selectable(tile.id) else (199, 196, 180)
+        if hovered:
+            base = (255, 250, 234)
         pygame.draw.rect(self.screen, base, rect, border_radius=7)
-        pygame.draw.rect(self.screen, (112, 95, 72), rect, width=2, border_radius=7)
+        pygame.draw.rect(self.screen, (119, 95, 61), rect, width=2, border_radius=7)
         inner = rect.inflate(-9, -9)
-        pygame.draw.rect(self.screen, (252, 248, 235), inner, border_radius=4)
+        pygame.draw.rect(self.screen, (255, 252, 241), inner, border_radius=4)
 
         if self.selected_id == tile.id:
-            pygame.draw.rect(self.screen, (245, 191, 66), rect.inflate(6, 6), width=4, border_radius=9)
+            pulse = int(2 + 2 * math.sin(now * 8))
+            pygame.draw.rect(self.screen, GOLD_LIGHT, rect.inflate(8 + pulse, 8 + pulse), width=4, border_radius=9)
         if self.hint_pair and tile.id in self.hint_pair:
-            pygame.draw.rect(self.screen, (93, 198, 138), rect.inflate(7, 7), width=4, border_radius=9)
+            pulse = int(3 + 2 * math.sin(now * 6))
+            pygame.draw.rect(self.screen, (88, 210, 153), rect.inflate(8 + pulse, 8 + pulse), width=4, border_radius=9)
         if tile.id in self.flash_tiles and now < self.flash_tiles[tile.id]:
             pygame.draw.rect(self.screen, (222, 82, 70), rect.inflate(8, 8), width=4, border_radius=9)
 
@@ -317,8 +461,8 @@ class MahjongApp:
         self.screen.blit(overlay, (0, 0))
         rect = pygame.Rect(0, 0, 460, 270)
         rect.center = (WINDOW_SIZE[0] // 2, WINDOW_SIZE[1] // 2)
-        pygame.draw.rect(self.screen, (248, 242, 226), rect, border_radius=8)
-        pygame.draw.rect(self.screen, (42, 53, 52), rect, width=3, border_radius=8)
+        pygame.draw.rect(self.screen, (250, 246, 232), rect, border_radius=10)
+        pygame.draw.rect(self.screen, (69, 92, 86), rect, width=3, border_radius=10)
 
         if self.state == ScreenState.WON:
             title = "Board Cleared"
@@ -330,7 +474,7 @@ class MahjongApp:
         else:
             title = "No Moves Available"
             body = "Undo the last move or exit to the menu."
-        title_surf = self.large_font.render(title, True, (42, 53, 52))
+        title_surf = self.large_font.render(title, True, INK)
         body_surf = self.font.render(body, True, (70, 83, 80))
         self.screen.blit(title_surf, title_surf.get_rect(center=(rect.centerx, rect.y + 66)))
         self.screen.blit(body_surf, body_surf.get_rect(center=(rect.centerx, rect.y + 118)))
@@ -338,27 +482,61 @@ class MahjongApp:
             self.draw_button(button)
 
     def draw_button(self, button: Button) -> None:
+        hovered = button.enabled and button.rect.collidepoint(pygame.mouse.get_pos())
         if button.enabled:
-            fill = (232, 190, 88)
-            border = (95, 72, 43)
-            text_color = (38, 38, 34)
+            if button.variant == "tab":
+                active = button.action.endswith(self.selected_difficulty)
+                fill = GOLD if active else PANEL_LIGHT
+                border = GOLD_DARK if active else (59, 128, 118)
+                text_color = INK if active else TEXT
+            elif button.variant == "secondary":
+                fill = (238, 231, 211)
+                border = (132, 116, 84)
+                text_color = INK
+            else:
+                fill = GOLD_LIGHT if hovered else GOLD
+                border = GOLD_DARK
+                text_color = INK
         else:
             fill = (130, 134, 125)
             border = (78, 82, 78)
             text_color = (80, 80, 76)
-        pygame.draw.rect(self.screen, fill, button.rect, border_radius=7)
-        pygame.draw.rect(self.screen, border, button.rect, width=2, border_radius=7)
+        rect = button.rect.move(0, -2 if hovered else 0)
+        pygame.draw.rect(self.screen, (9, 26, 29), rect.move(4, 5), border_radius=8)
+        pygame.draw.rect(self.screen, fill, rect, border_radius=8)
+        pygame.draw.rect(self.screen, border, rect, width=2, border_radius=8)
         label = self.font.render(button.label, True, text_color)
-        self.screen.blit(label, label.get_rect(center=button.rect.center))
+        self.screen.blit(label, label.get_rect(center=rect.center))
 
     def menu_buttons(self) -> list[Button]:
         x = WINDOW_SIZE[0] // 2 - 130
         return [
-            Button("Easy Pyramid", pygame.Rect(x, 285, 260, 56), "easy"),
-            Button("Medium Turtle", pygame.Rect(x, 365, 260, 56), "medium"),
-            Button("Hard Dragon", pygame.Rect(x, 445, 260, 56), "hard"),
-            Button("Quit", pygame.Rect(x, 545, 260, 56), "quit"),
+            Button("Start Game", pygame.Rect(x, 310, 260, 58), "level_select"),
+            Button("Quit", pygame.Rect(x, 395, 260, 58), "quit", variant="secondary"),
         ]
+
+    def level_select_buttons(self) -> list[Button]:
+        buttons: list[Button] = []
+        for index, key in enumerate(DIFFICULTIES):
+            buttons.append(
+                Button(
+                    DIFFICULTY_LABELS[key],
+                    pygame.Rect(76, 174 + index * 78, 192, 54),
+                    f"tab:{key}",
+                    variant="tab",
+                )
+            )
+        keys = LEVEL_OPTIONS[self.selected_difficulty]
+        for index, level_key in enumerate(keys):
+            buttons.append(
+                Button(
+                    "Play",
+                    pygame.Rect(372 + index * 278, 452, 174, 48),
+                    f"level:{level_key}",
+                )
+            )
+        buttons.append(Button("Back", pygame.Rect(76, 576, 192, 48), "menu", variant="secondary"))
+        return buttons
 
     def toolbar_buttons(self) -> list[Button]:
         right = WINDOW_SIZE[0] - 34
@@ -368,7 +546,7 @@ class MahjongApp:
             ("Hint", "hint", True),
             ("Undo", "undo", bool(self.history)),
             ("Restart", "restart", True),
-            ("Menu", "menu", True),
+            ("Menu", "level_select", True),
         ]
         buttons: list[Button] = []
         x = right - len(labels) * width - (len(labels) - 1) * gap
@@ -381,11 +559,25 @@ class MahjongApp:
         y = WINDOW_SIZE[1] // 2 + 62
         if self.state == ScreenState.WON:
             return [
-                Button("Play Again", pygame.Rect(WINDOW_SIZE[0] // 2 - 190, y, 170, 46), "play_again"),
-                Button("Menu", pygame.Rect(WINDOW_SIZE[0] // 2 + 20, y, 170, 46), "menu"),
+                Button(
+                    "Play Again",
+                    pygame.Rect(WINDOW_SIZE[0] // 2 - 190, y, 170, 46),
+                    "play_again",
+                ),
+                Button(
+                    "Menu",
+                    pygame.Rect(WINDOW_SIZE[0] // 2 + 20, y, 170, 46),
+                    "level_select",
+                ),
             ]
         if self.state == ScreenState.ERROR:
-            return [Button("Menu", pygame.Rect(WINDOW_SIZE[0] // 2 - 85, y, 170, 46), "menu")]
+            return [
+                Button(
+                    "Menu",
+                    pygame.Rect(WINDOW_SIZE[0] // 2 - 85, y, 170, 46),
+                    "level_select",
+                )
+            ]
         return [
             Button(
                 "Undo Last Move",
@@ -393,8 +585,35 @@ class MahjongApp:
                 "undo",
                 bool(self.history),
             ),
-            Button("Exit to Menu", pygame.Rect(WINDOW_SIZE[0] // 2 + 15, y, 190, 46), "menu"),
+            Button(
+                "Exit to Menu",
+                pygame.Rect(WINDOW_SIZE[0] // 2 + 15, y, 190, 46),
+                "level_select",
+            ),
         ]
+
+    def draw_status_bar(self) -> None:
+        rect = pygame.Rect(34, WINDOW_SIZE[1] - 58, 420, 38)
+        pygame.draw.rect(self.screen, (18, 46, 50), rect, border_radius=8)
+        pygame.draw.rect(self.screen, (53, 117, 109), rect, width=1, border_radius=8)
+        text = self.font.render(self.status_text, True, (255, 238, 172))
+        self.screen.blit(text, (rect.x + 14, rect.y + 7))
+
+    def draw_particles(self, now: float) -> None:
+        active: list[Particle] = []
+        for particle in self.particles:
+            age = now - particle.born
+            if age >= particle.lifetime:
+                continue
+            t = age / particle.lifetime
+            x = particle.x + particle.vx * t
+            y = particle.y + particle.vy * t + 34 * t * t
+            alpha = max(0, 180 - int(180 * t))
+            surface = pygame.Surface((8, 8), pygame.SRCALPHA)
+            pygame.draw.circle(surface, (*particle.color, alpha), (4, 4), 4)
+            self.screen.blit(surface, (x - 4, y - 4))
+            active.append(particle)
+        self.particles = active
 
 
 def face_color(group: str) -> tuple[int, int, int]:
