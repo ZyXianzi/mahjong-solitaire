@@ -38,17 +38,18 @@ modal with time, move count, and hint count.
 - Three guaranteed-solvable fixed board templates for each difficulty.
 - Board generation randomizes the removable pair sequence, so repeated games do
   not use the same mirrored face placement.
-- Public-domain Mahjong tile PNGs with padded face art and custom flower /
-  season illustrations.
+- Mahjong tile PNG assets with padded face art and real flower / season tile
+  images.
 - Programmatically drawn buttons, previews, highlights, and effects.
 - No scoring, save/load, sound, or packaged app export yet.
 
 ## Art Credits
 
-Tile face art comes from
+Suited and honor tile art comes from
 [FluffyStuff/riichi-mahjong-tiles](https://github.com/FluffyStuff/riichi-mahjong-tiles),
-which publishes the assets in the public domain. See
-`assets/tiles/ATTRIBUTION.md`.
+which publishes those assets in the public domain. Flower and season tile art is
+cropped from Wikimedia Commons `Flowers mahjong.png` by Cangjie6 under CC
+BY-SA 4.0. See `assets/tiles/ATTRIBUTION.md`.
 
 ## Tests
 

@@ -21,8 +21,8 @@ Current 1.0 scope:
 - Guaranteed-solvable generated boards.
 - Hint, undo, invalid-click feedback, deadlock modal, win modal, and simple
   in-game effects.
-- Public-domain Mahjong tile PNG art with padded face art and custom flower /
-  season illustrations.
+- Mahjong tile PNG art with padded face art and real flower / season tile
+  images.
 - Programmatically drawn controls, layout previews, and effects.
 
 Out of scope for 1.0:
@@ -66,6 +66,8 @@ UV_CACHE_DIR=.uv-cache SDL_VIDEODRIVER=dummy uv run python -c "from mahjong_soli
 - `assets/tiles/regular/`: Public-domain Mahjong tile PNGs from
   FluffyStuff/riichi-mahjong-tiles. Keep `assets/tiles/ATTRIBUTION.md` aligned
   if the source changes.
+- `assets/tiles/bonus/`: Flower and season tile crops from Wikimedia Commons
+  `Flowers mahjong.png` by Cangjie6 under CC BY-SA 4.0.
 - `tests/test_core.py`: Unit coverage for selection rules, matching, deadlock,
   undo, and generated board solvability.
 
