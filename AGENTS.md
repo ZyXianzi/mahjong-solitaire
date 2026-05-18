@@ -112,10 +112,10 @@ Current layout sizes:
 ## UI Notes
 
 The Pygame app uses a fixed `1280x800` logical window. It creates the window via
-`pygame.Window(..., allow_high_dpi=True)` when available, then draws to the
-actual window surface. On Retina displays that surface may be `2560x1600`, so
-rendering code must scale logical coordinates through the app helpers before
-drawing to `self.screen`.
+`pygame.Window(..., allow_high_dpi=True)`, then draws to the actual window
+surface. On Retina displays that surface may be `2560x1600`, so rendering code
+must scale logical coordinates through the app helpers before drawing to
+`self.screen`.
 
 Rendering is intentionally programmatic: gradient backgrounds, rounded tiles,
 shadows, SVG tile art, selection outlines, hint outlines, invalid-click flash

@@ -131,7 +131,9 @@ class TileArt:
 class MahjongApp:
     def __init__(self) -> None:
         pygame.init()
-        self.window: pygame.Window | None = None
+        self.window = pygame.Window(
+            "Mahjong Solitaire", size=WINDOW_SIZE, allow_high_dpi=True
+        )
         self.screen = self.create_window_surface()
         self.render_scale = self.screen.get_width() / WINDOW_SIZE[0]
         self.clock = pygame.time.Clock()
@@ -171,17 +173,7 @@ class MahjongApp:
         pygame.quit()
 
     def create_window_surface(self) -> pygame.Surface:
-        if hasattr(pygame, "Window"):
-            try:
-                self.window = pygame.Window(
-                    "Mahjong Solitaire", size=WINDOW_SIZE, allow_high_dpi=True
-                )
-                return self.window.get_surface()
-            except (pygame.error, TypeError):
-                self.window = None
-
-        pygame.display.set_caption("Mahjong Solitaire")
-        return pygame.display.set_mode(WINDOW_SIZE)
+        return self.window.get_surface()
 
     def make_font(self, size: int, bold: bool = False) -> pygame.font.Font:
         return pygame.font.SysFont(
@@ -189,10 +181,7 @@ class MahjongApp:
         )
 
     def flip(self) -> None:
-        if self.window is not None:
-            self.window.flip()
-        else:
-            pygame.display.flip()
+        self.window.flip()
 
     def scaled_value(self, value: int | float) -> int:
         return scale_value(value, self.render_scale)

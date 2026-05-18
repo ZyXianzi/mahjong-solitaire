@@ -44,9 +44,9 @@ UV_CACHE_DIR=.uv-cache uv sync
 UV_CACHE_DIR=.uv-cache uv run python main.py
 ```
 
-The game opens a fixed `1280x800` logical Pygame window. On high-DPI displays,
-the app uses the newer `pygame.Window` API with `allow_high_dpi=True` and draws
-to the full Retina framebuffer when available.
+The game opens a fixed `1280x800` logical Pygame window through the newer
+`pygame.Window` API with `allow_high_dpi=True`. On high-DPI displays it draws to
+the full Retina framebuffer.
 
 ## How To Play
 
