@@ -1,3 +1,5 @@
+"""Core game rules that can be tested without opening a Pygame window."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,6 +11,11 @@ TILE_SPAN = 2
 
 @dataclass(frozen=True)
 class Coord:
+    """Tile position in the layout grid.
+
+    The `z` value is the layer height. Higher layers can cover lower tiles.
+    """
+
     x: int
     y: int
     z: int
@@ -16,6 +23,8 @@ class Coord:
 
 @dataclass
 class Tile:
+    """A single Mahjong tile on the board."""
+
     id: int
     face: str
     match_group: str
@@ -37,23 +46,30 @@ class Tile:
 
 @dataclass(frozen=True)
 class Move:
+    """One removed pair, stored so undo can restore it."""
+
     first_id: int
     second_id: int
 
 
 @dataclass(frozen=True)
 class Level:
+    """A named layout template made from fixed tile coordinates."""
+
     key: str
     name: str
     coords: tuple[Coord, ...]
 
 
 class Board:
+    """Rules engine for selecting, matching, removing, and restoring tiles."""
+
     def __init__(self, tiles: list[Tile]):
         self.tiles = tiles
         self._by_id = {tile.id: tile for tile in tiles}
 
     def clone(self) -> Board:
+        """Return an independent copy used by tests and board generation."""
         return Board(
             [
                 Tile(
@@ -80,6 +96,7 @@ class Board:
         return self.remaining_count() == 0
 
     def is_selectable(self, tile_id: int) -> bool:
+        """A tile is free when it is uncovered and has one open side."""
         tile = self.tile(tile_id)
         if tile.removed or self.is_covered(tile):
             return False
@@ -89,6 +106,7 @@ class Board:
         return [tile for tile in self.active_tiles() if self.is_selectable(tile.id)]
 
     def is_covered(self, tile: Tile) -> bool:
+        """Check whether any higher tile overlaps this tile's 2x2 footprint."""
         return any(
             other.z > tile.z and rects_overlap(tile.coord, other.coord)
             for other in self.active_tiles()
@@ -114,6 +132,7 @@ class Board:
         )
 
     def can_match(self, first_id: int, second_id: int) -> bool:
+        """Apply classic Mahjong Solitaire matching rules."""
         if first_id == second_id:
             return False
         first = self.tile(first_id)
@@ -133,6 +152,7 @@ class Board:
         ]
 
     def remove_pair(self, first_id: int, second_id: int) -> Move:
+        """Remove a legal pair and return a Move object for undo."""
         if not self.is_selectable(first_id) or not self.is_selectable(second_id):
             raise ValueError("Both tiles must be selectable before removal.")
         if not self.can_match(first_id, second_id):
@@ -149,10 +169,12 @@ class Board:
         return bool(self.legal_pairs())
 
     def is_deadlocked(self) -> bool:
+        """Deadlock means tiles remain but no legal matching pair exists."""
         return self.remaining_count() > 0 and not self.has_legal_pair()
 
 
 def rects_overlap(first: Coord, second: Coord) -> bool:
+    """Return True when two tile footprints overlap in x/y space."""
     return (
         first.x < second.x + TILE_SPAN
         and first.x + TILE_SPAN > second.x
@@ -162,4 +184,5 @@ def rects_overlap(first: Coord, second: Coord) -> bool:
 
 
 def vertical_overlap(first: Coord, second: Coord) -> bool:
+    """Side blocking only matters when neighboring tiles overlap vertically."""
     return first.y < second.y + TILE_SPAN and first.y + TILE_SPAN > second.y

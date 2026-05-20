@@ -1,3 +1,5 @@
+"""Pygame user interface, rendering, input handling, and screen flow."""
+
 from __future__ import annotations
 
 import math
@@ -47,6 +49,7 @@ INK = (37, 41, 39)
 
 
 def scale_value(value: int | float, scale: float) -> int:
+    """Scale logical pixels to the real display surface for high-DPI windows."""
     if value == 0:
         return 0
     scaled = int(round(value * scale))
@@ -56,6 +59,8 @@ def scale_value(value: int | float, scale: float) -> int:
 
 
 class ScreenState(Enum):
+    """All screens and modal states the app can show."""
+
     MENU = "menu"
     LEVEL_SELECT = "level_select"
     PLAYING = "playing"
@@ -66,6 +71,8 @@ class ScreenState(Enum):
 
 @dataclass
 class Button:
+    """Clickable UI button with a simple string action."""
+
     label: str
     rect: pygame.Rect
     action: str
@@ -75,6 +82,8 @@ class Button:
 
 @dataclass
 class Particle:
+    """Short-lived visual effect used when a matching pair is removed."""
+
     x: float
     y: float
     vx: float
@@ -85,6 +94,8 @@ class Particle:
 
 
 class TileArt:
+    """Loads SVG tile art once and caches scaled tile surfaces."""
+
     def __init__(self, render_scale: float = 1.0) -> None:
         self.render_scale = render_scale
         self.tile_width = scale_value(TILE_WIDTH, render_scale)
@@ -93,6 +104,7 @@ class TileArt:
         self.scaled_cache: dict[str, pygame.Surface] = {}
 
     def load_source_images(self) -> dict[str, pygame.Surface]:
+        """Read all tile SVG files from the assets folder."""
         images: dict[str, pygame.Surface] = {}
         for path in TILE_ASSET_DIR.glob("*.svg"):
             images[path.stem] = pygame.image.load(path).convert_alpha()
@@ -129,6 +141,8 @@ class TileArt:
 
 
 class MahjongApp:
+    """Main application object that owns the game loop and UI state."""
+
     def __init__(self) -> None:
         pygame.init()
         self.window = pygame.Window(
@@ -163,6 +177,7 @@ class MahjongApp:
         self.particles: list[Particle] = []
 
     def run(self) -> None:
+        """Run the event, draw, and frame-limit loop until the game exits."""
         while self.running:
             now = time.monotonic()
             for event in pygame.event.get():
@@ -235,6 +250,7 @@ class MahjongApp:
         return pos
 
     def start_game(self, level_key: str) -> None:
+        """Generate a fresh board and reset per-game counters."""
         self.current_level = level_key
         try:
             self.board, self.solution = generate_board(LEVELS[level_key])
@@ -255,6 +271,7 @@ class MahjongApp:
         self.state = ScreenState.PLAYING
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Route mouse input to the correct screen handler."""
         if event.type == pygame.QUIT:
             self.running = False
             return
@@ -301,6 +318,7 @@ class MahjongApp:
             self.invoke_action(button.action)
 
     def invoke_action(self, action: str) -> None:
+        """Convert button action strings into game state changes."""
         if action == "hint":
             self.show_hint()
         elif action == "level_select":
@@ -321,6 +339,7 @@ class MahjongApp:
             self.running = False
 
     def click_tile(self, tile: Tile) -> None:
+        """Handle tile selection, matching, invalid clicks, and end states."""
         assert self.board is not None
         if not self.board.is_selectable(tile.id):
             self.flash(tile.id, "That tile is blocked.")
@@ -360,6 +379,7 @@ class MahjongApp:
         self.status("Tiles do not match.")
 
     def show_hint(self) -> None:
+        """Highlight the first legal pair, or show deadlock if none exists."""
         assert self.board is not None
         pairs = self.board.legal_pairs()
         if not pairs:
@@ -372,6 +392,7 @@ class MahjongApp:
         self.status("Hint highlighted.")
 
     def undo(self) -> None:
+        """Restore the most recently removed pair."""
         if self.board is None or not self.history:
             self.status("Nothing to undo.")
             return
@@ -411,6 +432,7 @@ class MahjongApp:
                 )
 
     def tile_at_pos(self, pos: tuple[int, int]) -> Tile | None:
+        """Find the topmost active tile under the mouse cursor."""
         if self.board is None:
             return None
         for tile in sorted(
@@ -424,6 +446,7 @@ class MahjongApp:
         return None
 
     def draw(self, now: float) -> None:
+        """Draw the current screen and any modal overlay."""
         self.draw_background()
         if self.state == ScreenState.MENU:
             self.draw_menu(now)
@@ -435,6 +458,7 @@ class MahjongApp:
                 self.draw_modal()
 
     def draw_background(self) -> None:
+        """Draw the table background used behind every screen."""
         height = WINDOW_SIZE[1]
         for y in range(0, height, 4):
             t = y / height
@@ -810,6 +834,7 @@ class MahjongApp:
 
 
 def tile_asset_name(tile: Tile) -> str:
+    """Map a generated tile face to the matching SVG asset filename."""
     if tile.match_group == "characters":
         return {
             "1M": "0101一萬",
@@ -874,5 +899,6 @@ def tile_asset_name(tile: Tile) -> str:
 
 
 def format_time(seconds: int) -> str:
+    """Format elapsed game time as MM:SS."""
     minutes, secs = divmod(seconds, 60)
     return f"{minutes:02d}:{secs:02d}"

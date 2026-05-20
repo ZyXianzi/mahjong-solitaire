@@ -1,3 +1,5 @@
+"""Build randomized boards while keeping a known solution path."""
+
 from __future__ import annotations
 
 import random
@@ -12,6 +14,7 @@ FacePair = tuple[tuple[str, str], tuple[str, str]]
 def generate_board(
     level: Level, seed: int | None = None, max_attempts: int = 50
 ) -> tuple[Board, list[tuple[int, int]]]:
+    """Create a solvable board and return it with the removal solution."""
     rng = random.Random(seed)
     for _ in range(max_attempts):
         ordered_coords = sorted(level.coords, key=lambda coord: (coord.z, coord.y, coord.x))
@@ -26,6 +29,8 @@ def generate_board(
                 for index, coord in enumerate(ordered_coords)
             ]
         )
+        # First choose a legal removal order on a blank board. Faces are added
+        # later so every pair in that order can be made to match.
         solution = build_open_pair_sequence(blank, rng)
         if len(solution) * 2 != len(ordered_coords):
             continue
@@ -35,6 +40,7 @@ def generate_board(
         if len(solution) > len(pairs):
             raise ValueError("Not enough Mahjong tile faces for this layout.")
 
+        # Assign matching faces to each pair from the known solution path.
         board = blank.clone()
         for (first_id, second_id), pair_faces in zip(
             solution, pairs[: len(solution)], strict=True
@@ -54,6 +60,7 @@ def generate_board(
 def build_open_pair_sequence(
     board: Board, rng: random.Random | None = None
 ) -> list[tuple[int, int]]:
+    """Repeatedly remove two currently selectable tiles from a blank layout."""
     rng = rng or random.Random()
     work = board.clone()
     sequence: list[tuple[int, int]] = []
@@ -69,6 +76,7 @@ def build_open_pair_sequence(
 
 
 def validate_solution_path(board: Board, solution: Sequence[tuple[int, int]]) -> bool:
+    """Replay the generated solution to prove the finished board is solvable."""
     work = board.clone()
     try:
         for first_id, second_id in solution:
@@ -79,6 +87,7 @@ def validate_solution_path(board: Board, solution: Sequence[tuple[int, int]]) ->
 
 
 def build_face_pairs() -> list[FacePair]:
+    """Build all matching face pairs available in a standard Mahjong set."""
     pairs: list[FacePair] = []
     suits = (("M", "characters"), ("B", "bamboo"), ("D", "dots"))
     for suffix, group in suits:
@@ -100,6 +109,7 @@ def build_face_pairs() -> list[FacePair]:
 
 
 def group_pairs(faces: tuple[str, ...], group: str) -> list[FacePair]:
+    """Flowers and seasons match within their group instead of by exact face."""
     return [
         ((faces[0], group), (faces[1], group)),
         ((faces[2], group), (faces[3], group)),

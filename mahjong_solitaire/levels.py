@@ -1,3 +1,5 @@
+"""Fixed coordinate templates for every selectable board layout."""
+
 from __future__ import annotations
 
 from .core import Coord, Level

@@ -129,15 +129,3 @@ UV_CACHE_DIR=.uv-cache SDL_VIDEODRIVER=dummy uv run python -c "from mahjong_soli
 
 For UI changes, also check the real desktop window. Headless Pygame screenshots
 can miss macOS display-backend rendering issues.
-
-## Development Notes
-
-- Keep rule logic in `core.py` and `generator.py` testable without Pygame.
-- Keep `main.py` as the root run target.
-- Use uv for dependency changes and commit `uv.lock` when dependencies change.
-- Keep player-facing text in English unless localization is explicitly planned.
-- The tile renderer depends on the SVG filenames in `assets/tiles/`; update
-  `tile_asset_name()` in `mahjong_solitaire/app.py` if the asset set changes.
-- Rendering uses logical coordinates and scales drawing operations to the actual
-  window surface. If you add new drawing code, use the app's scaling helpers
-  instead of drawing raw logical `pygame.Rect` values directly to `self.screen`.
