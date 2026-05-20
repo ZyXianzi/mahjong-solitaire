@@ -1,7 +1,7 @@
 [project]
 name = "mahjong-solitaire"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "This project is a desktop Mahjong Solitaire game built with Python and pygame-ce. Players choose from Easy, Medium, and Hard layout tabs, then remove matching free tiles until the board is cleared. The game includes guaranteed-solvable board generation, real Mahjong SVG tile art, hints, undo, invalid-click feedback, deadlock handling, and win detection. It uses classes, dataclasses, error handling, asset loading, and automated tests to keep the game logic organized and reliable."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
